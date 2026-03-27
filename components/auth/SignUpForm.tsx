@@ -3,10 +3,9 @@
 // CLIENT COMPONENT — multi-field form, role selection, validation, submit
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Scale, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
-import { signUp } from "@/services/auth";
+import { signUp } from "@/app/actions/auth";
 
 // ── Validators ────────────────────────────────────────────────────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -41,7 +40,6 @@ interface FormData {
 }
 
 export default function SignUpForm() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -109,11 +107,9 @@ export default function SignUpForm() {
       }
 
       toast.success("تم إنشاء الحساب بنجاح");
-      // Redirect based on role
-      router.push(
-        formData.role === "officeOwner" ? "/office-setup" : "/settings",
-      );
-      router.refresh();
+      // Hard navigation ensures all session cookies are freshly sent
+      window.location.href =
+        formData.role === "officeOwner" ? "/office-setup" : "/settings";
     } catch {
       const msg = "حدث خطأ أثناء إنشاء الحساب";
       setErrors((prev) => ({ ...prev, form: msg }));
@@ -207,7 +203,7 @@ export default function SignUpForm() {
               placeholder="example@law.com"
               className="w-full rounded-md py-3 pr-12 pl-4 text-text-primary border border-border outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
-            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
           </div>
         </div>
 
@@ -216,7 +212,10 @@ export default function SignUpForm() {
           <label className="block text-sm text-text-secondary mb-1">
             كلمة المرور *
           </label>
-          <div className="relative">
+          <div className="flex items-center border border-border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+            <span className="px-3 text-text-muted flex-shrink-0">
+              <Lock size={16} />
+            </span>
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -224,16 +223,15 @@ export default function SignUpForm() {
               onChange={handleChange}
               required
               placeholder="••••••"
-              className="w-full rounded-md py-3 px-4 pr-10 text-text-primary border border-border outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="flex-1 py-3 bg-transparent outline-none text-text-primary min-w-0"
             />
-            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
               aria-label={
                 showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
               }
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted cursor-pointer"
+              className="px-3 text-text-muted hover:text-text-primary transition-colors flex-shrink-0"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
@@ -254,26 +252,40 @@ export default function SignUpForm() {
               placeholder="01XXXXXXXXX"
               className="w-full rounded-md py-3 px-4 pr-10 text-text-primary border border-border outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
-            <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
           </div>
         </div>
 
         {/* Role picker */}
-        <div className="flex gap-3">
-          {(["officeOwner", "lawyer"] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setFormData((prev) => ({ ...prev, role: r }))}
-              className={`flex-1 py-2 border rounded-md font-medium transition-colors ${
-                formData.role === r
-                  ? "bg-primary text-white border-primary"
-                  : "border-border text-text-secondary hover:bg-surface-hover"
-              }`}
-            >
-              {r === "officeOwner" ? "صاحب مكتب" : "محامي"}
-            </button>
-          ))}
+        <div>
+          <p className="block text-sm text-text-secondary mb-2">نوع الحساب *</p>
+          <div className="grid grid-cols-2 gap-3">
+            {(["officeOwner", "lawyer"] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setFormData((prev) => ({ ...prev, role: r }))}
+                className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                  formData.role === r
+                    ? "border-primary bg-blue-50 text-primary"
+                    : "border-border text-text-secondary hover:border-primary/40 hover:bg-surface-hover"
+                }`}
+              >
+                <span
+                  className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    formData.role === r ? "border-primary" : "border-border"
+                  }`}
+                >
+                  {formData.role === r && (
+                    <span className="w-2 h-2 rounded-full bg-primary block" />
+                  )}
+                </span>
+                <span className="text-sm font-medium">
+                  {r === "officeOwner" ? "صاحب مكتب" : "محامي"}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <button

@@ -3,10 +3,9 @@
 // CLIENT COMPONENT — form state, show/hide password, submit handler
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Scale, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { signIn } from "@/services/auth";
+import { signIn } from "@/app/actions/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -17,7 +16,6 @@ function validateEmail(value: string): string {
 }
 
 export default function SignInForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -48,10 +46,9 @@ export default function SignInForm() {
       }
 
       toast.success("تم تسجيل الدخول بنجاح");
-      // The dashboard layout will handle role-based rendering;
-      // redirect to dashboard by default (admin can navigate from there).
-      router.push("/dashboard");
-      router.refresh();
+      // Hard navigation ensures the browser sends fresh session cookies
+      // to the middleware on the very next request.
+      window.location.href = "/dashboard";
     } catch {
       const msg = "حدث خطأ أثناء تسجيل الدخول";
       setFormError(msg);
@@ -114,7 +111,7 @@ export default function SignInForm() {
               placeholder="example@law.com"
               className="w-full rounded-md py-3 pr-10 pl-4 text-text-primary placeholder:text-text-muted border border-border outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
-            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
           </div>
         </div>
 
@@ -123,23 +120,25 @@ export default function SignInForm() {
           <label className="block text-sm text-text-secondary mt-5 mb-2">
             كلمة المرور *
           </label>
-          <div className="relative">
+          <div className="flex items-center border border-border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+            <span className="px-3 text-text-muted flex-shrink-0">
+              <Lock size={16} />
+            </span>
             <input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••"
-              className="w-full rounded-md py-3 px-4 pr-10 text-text-primary placeholder:text-text-muted border border-border outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="flex-1 py-3 bg-transparent outline-none text-text-primary placeholder:text-text-muted min-w-0"
             />
-            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
               aria-label={
                 showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
               }
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted cursor-pointer"
+              className="px-3 text-text-muted hover:text-text-primary transition-colors flex-shrink-0"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>

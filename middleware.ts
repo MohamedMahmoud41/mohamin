@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Next.js Middleware — Auth Guard
+ * Next.js 15 Middleware — Auth Guard
  *
  * Replaces the old React project's:
  *   - src/layout/ProtectedRoute.jsx
@@ -15,11 +15,11 @@ import { NextResponse, type NextRequest } from "next/server";
  *   /dashboard, /cases, /office, /posts, /reports, /lawyers, /settings
  *     → require authenticated session → redirect to /login
  *   /admin/*
- *     → require authenticated session + role === 'admin' → redirect to /login or /dashboard
+ *     → require authenticated session + role === 'admin'
  *   /login, /signup, /forgot-password
- *     → redirect authenticated users to /dashboard (PublicRoute behaviour)
+ *     → redirect authenticated users to /dashboard
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -30,13 +30,23 @@ export async function proxy(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(
+          cookiesToSet: {
+            name: string;
+            value: string;
+            options?: Record<string, unknown>;
+          }[],
+        ) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            supabaseResponse.cookies.set(
+              name,
+              value,
+              options as Parameters<typeof supabaseResponse.cookies.set>[2],
+            ),
           );
         },
       },

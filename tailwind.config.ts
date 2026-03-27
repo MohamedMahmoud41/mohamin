@@ -11,43 +11,39 @@ module.exports = {
       // ─── Design Tokens (mirrored from the old React project's index.css @theme) ───
       colors: {
         primary: {
-          DEFAULT: "#6b4423",
-          dark: "#4a2f19",
-          light: "#8b6239",
+          DEFAULT: "#2563eb", // blue-600
+          dark: "#1d4ed8", // blue-700
+          light: "#3b82f6", // blue-500
         },
         secondary: {
-          DEFAULT: "#9c7856",
-          light: "#b59274",
+          DEFAULT: "#64748b", // slate-500
+          light: "#94a3b8", // slate-400
         },
         accent: {
-          DEFAULT: "#c9a76b",
-          light: "#d4b784",
+          DEFAULT: "#f59e0b", // amber-500
+          light: "#fbbf24", // amber-400
         },
-        beige: {
-          DEFAULT: "#e8dcc8",
-          light: "#f5f0e8",
-        },
-        background: "#fdfbf8",
+        background: "#f8fafc", // slate-50
         surface: {
           DEFAULT: "#ffffff",
-          hover: "#f9f6f2",
+          hover: "#f1f5f9", // slate-100
         },
         text: {
-          primary: "#2c1810",
-          secondary: "#6b4423",
-          muted: "#8b7865",
+          primary: "#0f172a", // slate-900
+          secondary: "#475569", // slate-600
+          muted: "#94a3b8", // slate-400
         },
-        border: "#e8dcc8",
-        divider: "#f0e6d6",
-        success: "#5a8b5f",
-        warning: "#d4a24d",
-        error: "#b85c4f",
-        info: "#6b7fa8",
+        border: "#e2e8f0", // slate-200
+        divider: "#f1f5f9", // slate-100
+        success: "#16a34a", // green-600
+        warning: "#d97706", // amber-600
+        error: "#dc2626", // red-600
+        info: "#0ea5e9", // sky-500
       },
       boxShadow: {
-        sm: "0 1px 3px rgba(107, 68, 35, 0.08)",
-        md: "0 4px 12px rgba(107, 68, 35, 0.12)",
-        lg: "0 8px 24px rgba(107, 68, 35, 0.16)",
+        sm: "0 1px 3px rgba(15, 23, 42, 0.06)",
+        md: "0 4px 12px rgba(15, 23, 42, 0.10)",
+        lg: "0 8px 24px rgba(15, 23, 42, 0.14)",
       },
       borderRadius: {
         sm: "8px",

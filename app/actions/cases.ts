@@ -4,10 +4,77 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Case, CaseNote, CaseSession } from "@/types";
 
+// ─── camelCase form data → snake_case DB row ─────────────────────────────────
+
+export interface CaseInput {
+  caseTitle: string;
+  caseType: string;
+  caseStatus: string;
+  caseDescription: string;
+  startDate: string;
+  nextSessionDate?: string | null;
+  officeId: string;
+  lawyerID: string;
+  lawyerName?: string;
+  courtName: string;
+  courtHall?: string;
+  clientName: string;
+  clientType?: string;
+  clientPhone: string;
+  clientEmail?: string;
+  clientAddress?: string;
+  opponentName: string;
+  opponentType?: string;
+  opponentPhone?: string;
+  opponentEmail?: string;
+  opponentAddress?: string;
+}
+
+function toDbRow(data: CaseInput) {
+  return {
+    case_title: data.caseTitle,
+    case_type: data.caseType,
+    case_status: data.caseStatus,
+    case_description: data.caseDescription,
+    start_date: data.startDate,
+    next_session_date: data.nextSessionDate || null,
+    office_id: data.officeId,
+    lawyer_id: data.lawyerID,
+    court_name: data.courtName,
+    client_name: data.clientName,
+    client_phone: data.clientPhone,
+    client_email: data.clientEmail || "",
+    opponent_name: data.opponentName,
+    opponent_phone: data.opponentPhone || "",
+  };
+}
+
+function toDbPartial(data: Partial<CaseInput>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const row: Record<string, any> = {};
+  if (data.caseTitle !== undefined) row.case_title = data.caseTitle;
+  if (data.caseType !== undefined) row.case_type = data.caseType;
+  if (data.caseStatus !== undefined) row.case_status = data.caseStatus;
+  if (data.caseDescription !== undefined)
+    row.case_description = data.caseDescription;
+  if (data.startDate !== undefined) row.start_date = data.startDate;
+  if (data.nextSessionDate !== undefined)
+    row.next_session_date = data.nextSessionDate || null;
+  if (data.officeId !== undefined) row.office_id = data.officeId;
+  if (data.lawyerID !== undefined) row.lawyer_id = data.lawyerID;
+  if (data.courtName !== undefined) row.court_name = data.courtName;
+  if (data.clientName !== undefined) row.client_name = data.clientName;
+  if (data.clientPhone !== undefined) row.client_phone = data.clientPhone;
+  if (data.clientEmail !== undefined) row.client_email = data.clientEmail;
+  if (data.opponentName !== undefined) row.opponent_name = data.opponentName;
+  if (data.opponentPhone !== undefined) row.opponent_phone = data.opponentPhone;
+  return row;
+}
+
 // ─── Case CRUD ────────────────────────────────────────────────────────────────
 
 export async function createCase(
-  data: Omit<Case, "id" | "createdAt" | "updatedAt">,
+  data: CaseInput,
 ): Promise<{ data: Case | null; error: string | null }> {
   const supabase = await createClient();
   const {
@@ -15,9 +82,11 @@ export async function createCase(
   } = await supabase.auth.getUser();
   if (!user) return { data: null, error: "غير مصرح" };
 
+  const row = { ...toDbRow(data), created_by: user.id };
+
   const { data: result, error } = await supabase
     .from("cases")
-    .insert({ ...data, created_by: user.id })
+    .insert(row)
     .select()
     .single();
 
@@ -46,12 +115,14 @@ export async function createCase(
 
 export async function updateCase(
   caseId: string,
-  data: Partial<Case>,
+  data: Partial<CaseInput>,
 ): Promise<{ data: Case | null; error: string | null }> {
   const supabase = await createClient();
+  const row = { ...toDbPartial(data), updated_at: new Date().toISOString() };
+
   const { data: result, error } = await supabase
     .from("cases")
-    .update({ ...data, updated_at: new Date().toISOString() })
+    .update(row)
     .eq("id", caseId)
     .select()
     .single();

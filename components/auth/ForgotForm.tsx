@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Scale, Mail } from "lucide-react";
-import { resetPassword } from "@/services/auth";
+import { resetPassword } from "@/app/actions/auth";
 
 export default function ForgotForm() {
   const router = useRouter();

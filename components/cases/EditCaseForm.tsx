@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useFormik } from "formik";
 import {
   Scale,
   User,
@@ -31,6 +32,11 @@ import type {
   Lawyer,
   User as UserType,
 } from "@/types";
+import {
+  editCaseSchema,
+  zodToFormikValidate,
+  type EditCaseFormValues,
+} from "@/lib/validations/cases";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,31 +50,7 @@ interface EditCaseFormProps {
   currentUser: UserType;
 }
 
-interface FormData {
-  caseTitle: string;
-  caseType: string;
-  caseStatus: string;
-  caseDescription: string;
-  startDate: string;
-  nextSessionDate: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  clientAddress: string;
-  opponentName: string;
-  opponentEmail: string;
-  opponentPhone: string;
-  opponentAddress: string;
-  courtName: string;
-  courtHall: string;
-  lawyerID: string;
-  lawyerName: string;
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const PHONE_RE = /^01[0-9]{9}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return "";
@@ -161,27 +143,64 @@ export default function EditCaseForm({
   const [error, setError] = useState<string | null>(null);
   const [showCourtSuggestions, setShowCourtSuggestions] = useState(false);
 
-  // Form data initialized from case
-  const [formData, setFormData] = useState<FormData>({
-    caseTitle: caseItem.caseTitle || "",
-    caseType: caseItem.caseType || "",
-    caseStatus: caseItem.caseStatus || "",
-    caseDescription: caseItem.caseDescription || "",
-    startDate: caseItem.startDate ? caseItem.startDate.slice(0, 10) : "",
-    nextSessionDate: toDatetimeLocal(caseItem.nextSessionDate),
-    clientName: caseItem.clientName || "",
-    clientEmail: caseItem.clientEmail || "",
-    clientPhone: caseItem.clientPhone || "",
-    clientAddress: (caseItem as any).clientAddress || "",
-    opponentName: caseItem.opponentName || "",
-    opponentEmail: (caseItem as any).opponentEmail || "",
-    opponentPhone: caseItem.opponentPhone || "",
-    opponentAddress: (caseItem as any).opponentAddress || "",
-    courtName: caseItem.courtName || "",
-    courtHall: (caseItem as any).courtHall || "",
-    lawyerID: caseItem.lawyerID || "",
-    lawyerName: "",
+  // Formik setup
+  const formik = useFormik<EditCaseFormValues>({
+    initialValues: {
+      caseTitle: caseItem.caseTitle || "",
+      caseType: caseItem.caseType || "",
+      caseStatus: caseItem.caseStatus || "",
+      caseDescription: caseItem.caseDescription || "",
+      startDate: caseItem.startDate ? caseItem.startDate.slice(0, 10) : "",
+      nextSessionDate: toDatetimeLocal(caseItem.nextSessionDate),
+      clientName: caseItem.clientName || "",
+      clientEmail: caseItem.clientEmail || "",
+      clientPhone: caseItem.clientPhone || "",
+      clientAddress: (caseItem as any).clientAddress || "",
+      opponentName: caseItem.opponentName || "",
+      opponentEmail: (caseItem as any).opponentEmail || "",
+      opponentPhone: caseItem.opponentPhone || "",
+      opponentAddress: (caseItem as any).opponentAddress || "",
+      courtName: caseItem.courtName || "",
+      courtHall: (caseItem as any).courtHall || "",
+      lawyerID: caseItem.lawyerID || "",
+      lawyerName: "",
+    },
+    validate: zodToFormikValidate(editCaseSchema),
+    onSubmit: (values) => {
+      setError(null);
+      startTransition(async () => {
+        const result = await updateCase(caseItem.id, {
+          caseTitle: values.caseTitle,
+          caseType: values.caseType,
+          caseStatus: values.caseStatus,
+          caseDescription: values.caseDescription,
+          startDate: values.startDate || "",
+          nextSessionDate: values.nextSessionDate || null,
+          clientName: values.clientName,
+          clientEmail: values.clientEmail,
+          clientPhone: values.clientPhone,
+          clientAddress: values.clientAddress,
+          opponentName: values.opponentName,
+          opponentEmail: values.opponentEmail,
+          opponentPhone: values.opponentPhone,
+          opponentAddress: values.opponentAddress,
+          courtName: values.courtName,
+          courtHall: values.courtHall,
+          lawyerID: values.lawyerID || currentUser.id,
+        });
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+        router.push(`/cases/${caseItem.id}`);
+        router.refresh();
+      });
+    },
   });
+
+  // Helper to get field error (only if touched)
+  const fieldError = (name: keyof EditCaseFormValues) =>
+    formik.touched[name] && formik.errors[name] ? formik.errors[name] : "";
 
   // Sessions state
   const [localSessions, setLocalSessions] = useState<CaseSession[]>(sessions);
@@ -199,61 +218,18 @@ export default function EditCaseForm({
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
-  function handleChange(field: keyof FormData, value: string) {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function validateForm(): string | null {
-    if (!formData.caseTitle.trim()) return "عنوان القضية مطلوب";
-    if (!formData.clientName.trim()) return "اسم الموكل مطلوب";
-    if (!formData.courtName.trim()) return "اسم المحكمة مطلوب";
-    if (formData.clientPhone && !PHONE_RE.test(formData.clientPhone))
-      return "رقم هاتف الموكل غير صحيح (يجب أن يبدأ بـ 01 ويتكون من 11 رقم)";
-    if (formData.clientEmail && !EMAIL_RE.test(formData.clientEmail))
-      return "البريد الإلكتروني للموكل غير صحيح";
-    if (formData.opponentPhone && !PHONE_RE.test(formData.opponentPhone))
-      return "رقم هاتف الخصم غير صحيح";
-    if (formData.opponentEmail && !EMAIL_RE.test(formData.opponentEmail))
-      return "البريد الإلكتروني للخصم غير صحيح";
-    if (
-      formData.nextSessionDate &&
-      new Date(formData.nextSessionDate) <= new Date()
-    )
-      return "تاريخ الجلسة القادمة يجب أن يكون في المستقبل";
-    return null;
-  }
-
-  function handleSave() {
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+  async function handleSave() {
+    // Touch all fields to show errors
+    const allFields = Object.keys(
+      formik.values,
+    ) as (keyof EditCaseFormValues)[];
+    allFields.forEach((f) => formik.setFieldTouched(f, true));
+    const errors = await formik.validateForm();
+    if (Object.keys(errors).length > 0) {
+      setError("يرجى تصحيح الأخطاء قبل الحفظ");
       return;
     }
-    setError(null);
-    startTransition(async () => {
-      const payload: Partial<Case> = {
-        caseTitle: formData.caseTitle,
-        caseType: formData.caseType,
-        caseStatus: formData.caseStatus,
-        caseDescription: formData.caseDescription,
-        startDate: formData.startDate || "",
-        nextSessionDate: formData.nextSessionDate || null,
-        clientName: formData.clientName,
-        clientEmail: formData.clientEmail,
-        clientPhone: formData.clientPhone,
-        opponentName: formData.opponentName,
-        opponentPhone: formData.opponentPhone,
-        courtName: formData.courtName,
-        lawyerID: formData.lawyerID || currentUser.id,
-      };
-      const result = await updateCase(caseItem.id, payload);
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-      router.push(`/cases/${caseItem.id}`);
-      router.refresh();
-    });
+    formik.handleSubmit();
   }
 
   // Sessions
@@ -388,7 +364,9 @@ export default function EditCaseForm({
   // ─── Court suggestions ───────────────────────────────────────────────────────
 
   const courtMatches = courts.filter((c) =>
-    c.name.toLowerCase().includes((formData.courtName || "").toLowerCase()),
+    c.name
+      .toLowerCase()
+      .includes((formik.values.courtName || "").toLowerCase()),
   );
 
   // ─── Sessions display ────────────────────────────────────────────────────────
@@ -468,10 +446,17 @@ export default function EditCaseForm({
               <div>
                 <FieldLabel required>عنوان القضية</FieldLabel>
                 <input
+                  name="caseTitle"
                   className={inputClass}
-                  value={formData.caseTitle}
-                  onChange={(e) => handleChange("caseTitle", e.target.value)}
+                  value={formik.values.caseTitle}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
+                {fieldError("caseTitle") && (
+                  <p className="text-error text-xs mt-1">
+                    {fieldError("caseTitle")}
+                  </p>
+                )}
               </div>
               <div>
                 <FieldLabel>رقم القضية</FieldLabel>
@@ -485,9 +470,11 @@ export default function EditCaseForm({
                 <div>
                   <FieldLabel>نوع القضية</FieldLabel>
                   <select
+                    name="caseType"
                     className={inputClass}
-                    value={formData.caseType}
-                    onChange={(e) => handleChange("caseType", e.target.value)}
+                    value={formik.values.caseType}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   >
                     <option value="">اختر نوع القضية</option>
                     {[
@@ -508,9 +495,11 @@ export default function EditCaseForm({
                 <div>
                   <FieldLabel>حالة القضية</FieldLabel>
                   <select
+                    name="caseStatus"
                     className={inputClass}
-                    value={formData.caseStatus}
-                    onChange={(e) => handleChange("caseStatus", e.target.value)}
+                    value={formik.values.caseStatus}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   >
                     <option value="">اختر الحالة</option>
                     <option value="نشطة">نشطة</option>
@@ -523,12 +512,17 @@ export default function EditCaseForm({
               <div>
                 <FieldLabel>وصف القضية</FieldLabel>
                 <textarea
+                  name="caseDescription"
                   className={`${inputClass} min-h-[100px] resize-y`}
-                  value={formData.caseDescription}
-                  onChange={(e) =>
-                    handleChange("caseDescription", e.target.value)
-                  }
+                  value={formik.values.caseDescription}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
+                {fieldError("caseDescription") && (
+                  <p className="text-error text-xs mt-1">
+                    {fieldError("caseDescription")}
+                  </p>
+                )}
               </div>
             </div>
           </SectionCard>
@@ -540,43 +534,60 @@ export default function EditCaseForm({
               <div>
                 <FieldLabel required>اسم الموكل</FieldLabel>
                 <input
+                  name="clientName"
                   className={inputClass}
-                  value={formData.clientName}
-                  onChange={(e) => handleChange("clientName", e.target.value)}
+                  value={formik.values.clientName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
+                {fieldError("clientName") && (
+                  <p className="text-error text-xs mt-1">
+                    {fieldError("clientName")}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <FieldLabel>البريد الإلكتروني</FieldLabel>
                   <input
+                    name="clientEmail"
                     className={inputClass}
                     type="email"
-                    value={formData.clientEmail}
-                    onChange={(e) =>
-                      handleChange("clientEmail", e.target.value)
-                    }
+                    value={formik.values.clientEmail}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
+                  {fieldError("clientEmail") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("clientEmail")}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <FieldLabel>رقم الهاتف</FieldLabel>
                   <input
+                    name="clientPhone"
                     className={inputClass}
-                    value={formData.clientPhone}
-                    onChange={(e) =>
-                      handleChange("clientPhone", e.target.value)
-                    }
+                    value={formik.values.clientPhone}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     placeholder="01XXXXXXXXX"
                   />
+                  {fieldError("clientPhone") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("clientPhone")}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
                 <FieldLabel>العنوان</FieldLabel>
                 <input
+                  name="clientAddress"
                   className={inputClass}
-                  value={formData.clientAddress}
-                  onChange={(e) =>
-                    handleChange("clientAddress", e.target.value)
-                  }
+                  value={formik.values.clientAddress}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
               </div>
             </div>
@@ -593,43 +604,55 @@ export default function EditCaseForm({
               <div>
                 <FieldLabel>اسم الخصم</FieldLabel>
                 <input
+                  name="opponentName"
                   className={inputClass}
-                  value={formData.opponentName}
-                  onChange={(e) => handleChange("opponentName", e.target.value)}
+                  value={formik.values.opponentName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <FieldLabel>البريد الإلكتروني</FieldLabel>
                   <input
+                    name="opponentEmail"
                     className={inputClass}
                     type="email"
-                    value={formData.opponentEmail}
-                    onChange={(e) =>
-                      handleChange("opponentEmail", e.target.value)
-                    }
+                    value={formik.values.opponentEmail}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
+                  {fieldError("opponentEmail") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("opponentEmail")}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <FieldLabel>رقم الهاتف</FieldLabel>
                   <input
+                    name="opponentPhone"
                     className={inputClass}
-                    value={formData.opponentPhone}
-                    onChange={(e) =>
-                      handleChange("opponentPhone", e.target.value)
-                    }
+                    value={formik.values.opponentPhone}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     placeholder="01XXXXXXXXX"
                   />
+                  {fieldError("opponentPhone") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("opponentPhone")}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
                 <FieldLabel>العنوان</FieldLabel>
                 <input
+                  name="opponentAddress"
                   className={inputClass}
-                  value={formData.opponentAddress}
-                  onChange={(e) =>
-                    handleChange("opponentAddress", e.target.value)
-                  }
+                  value={formik.values.opponentAddress}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
               </div>
             </div>
@@ -644,16 +667,18 @@ export default function EditCaseForm({
                 <FieldLabel required>المحكمة</FieldLabel>
                 <input
                   type="text"
+                  name="courtName"
                   className={inputClass}
-                  value={formData.courtName}
+                  value={formik.values.courtName}
                   onChange={(e) => {
-                    handleChange("courtName", e.target.value);
+                    formik.handleChange(e);
                     setShowCourtSuggestions(true);
                   }}
                   onFocus={() => setShowCourtSuggestions(true)}
-                  onBlur={() =>
-                    setTimeout(() => setShowCourtSuggestions(false), 200)
-                  }
+                  onBlur={(e) => {
+                    formik.handleBlur(e);
+                    setTimeout(() => setShowCourtSuggestions(false), 200);
+                  }}
                   autoComplete="off"
                   placeholder="اختر محكمة أو اكتب اسم جديد"
                 />
@@ -664,7 +689,7 @@ export default function EditCaseForm({
                         key={court.id}
                         className="p-3 hover:bg-beige-light cursor-pointer text-text-primary border-b border-border/50 last:border-0"
                         onClick={() => {
-                          handleChange("courtName", court.name);
+                          formik.setFieldValue("courtName", court.name);
                           setShowCourtSuggestions(false);
                         }}
                       >
@@ -678,14 +703,21 @@ export default function EditCaseForm({
                     )}
                   </ul>
                 )}
+                {fieldError("courtName") && (
+                  <p className="text-error text-xs mt-1">
+                    {fieldError("courtName")}
+                  </p>
+                )}
               </div>
 
               <div>
                 <FieldLabel>القاعة</FieldLabel>
                 <input
+                  name="courtHall"
                   className={inputClass}
-                  value={formData.courtHall}
-                  onChange={(e) => handleChange("courtHall", e.target.value)}
+                  value={formik.values.courtHall}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
               </div>
 
@@ -694,21 +726,28 @@ export default function EditCaseForm({
                   <FieldLabel>تاريخ البدء</FieldLabel>
                   <input
                     type="date"
+                    name="startDate"
                     className={inputClass}
-                    value={formData.startDate}
-                    onChange={(e) => handleChange("startDate", e.target.value)}
+                    value={formik.values.startDate}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
                 </div>
                 <div>
                   <FieldLabel>الجلسة القادمة</FieldLabel>
                   <input
                     type="datetime-local"
+                    name="nextSessionDate"
                     className={inputClass}
-                    value={formData.nextSessionDate}
-                    onChange={(e) =>
-                      handleChange("nextSessionDate", e.target.value)
-                    }
+                    value={formik.values.nextSessionDate}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
+                  {fieldError("nextSessionDate") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("nextSessionDate")}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -971,20 +1010,21 @@ export default function EditCaseForm({
               </h2>
               <FieldLabel>اختر المحامي</FieldLabel>
               <select
+                name="lawyerID"
                 className={`${inputClass} mt-2`}
-                value={formData.lawyerID}
+                value={formik.values.lawyerID}
                 onChange={(e) => {
                   const selectedId = e.target.value;
                   const selectedLawyer = lawyers.find(
                     (l) => l.id === selectedId,
                   );
-                  setFormData((prev) => ({
-                    ...prev,
-                    lawyerID: selectedId,
-                    lawyerName: selectedLawyer
+                  formik.setFieldValue("lawyerID", selectedId);
+                  formik.setFieldValue(
+                    "lawyerName",
+                    selectedLawyer
                       ? `${selectedLawyer.firstName} ${selectedLawyer.lastName}`
                       : "",
-                  }));
+                  );
                 }}
               >
                 <option value="" disabled>

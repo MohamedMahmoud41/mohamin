@@ -30,7 +30,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="font-sans bg-background text-text-primary antialiased">
+      <body className="font-sans bg-background text-text-primary antialiased" suppressHydrationWarning>
         {/* Global toast notifications — mirrors react-hot-toast in old project */}
         <Toaster
           position="top-center"

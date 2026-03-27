@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "@/services/auth";
+import { signOut } from "@/app/actions/auth";
 import type { User } from "@/types";
 
 interface SidebarProps {
