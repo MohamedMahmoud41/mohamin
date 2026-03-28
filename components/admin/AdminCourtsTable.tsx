@@ -18,7 +18,7 @@ function CourtModal({
 }: {
   court?: Court;
   onClose: () => void;
-  onDone: (data: { name: string; city: string }) => void;
+  onDone: (data: { name: string; city: string }, newCourt?: Court) => void;
 }) {
   const [form, setForm] = useState({
     name: court?.name ?? "",
@@ -41,7 +41,7 @@ function CourtModal({
         setError(res.error);
         return;
       }
-      onDone(form);
+      onDone(form, !isEdit ? (res as { court?: Court }).court : undefined);
       onClose();
     });
   }
@@ -166,7 +166,6 @@ export default function AdminCourtsTable({
   const [modal, setModal] = useState<null | "add" | "edit" | "delete">(null);
   const [selected, setSelected] = useState<Court | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -204,7 +203,9 @@ export default function AdminCourtsTable({
       {modal === "add" && (
         <CourtModal
           onClose={() => setModal(null)}
-          onDone={(_data) => setRefreshKey((k) => k + 1)}
+          onDone={(_data, newCourt) => {
+            if (newCourt) setCourts((p) => [newCourt, ...p]);
+          }}
         />
       )}
       {modal === "edit" && selected && (
@@ -272,9 +273,9 @@ export default function AdminCourtsTable({
               <th className="px-6 py-4 text-xs font-semibold text-text-muted">
                 المدينة
               </th>
-              <th className="px-6 py-4 text-xs font-semibold text-text-muted">
+              {/* <th className="px-6 py-4 text-xs font-semibold text-text-muted">
                 سنة الإضافة
-              </th>
+              </th> */}
               <th className="px-6 py-4 text-xs font-semibold text-text-muted text-left">
                 إجراءات
               </th>
@@ -306,9 +307,9 @@ export default function AdminCourtsTable({
                 <td className="px-6 py-4 text-sm text-text-secondary">
                   {court.city}
                 </td>
-                <td className="px-6 py-4 text-sm text-text-secondary">
+                {/* <td className="px-6 py-4 text-sm text-text-secondary">
                   {new Date(court.createdAt).getFullYear()}
-                </td>
+                </td> */}
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
                     <button

@@ -25,7 +25,7 @@ function AddOfficeModal({
   onAdded,
 }: {
   onClose: () => void;
-  onAdded: () => void;
+  onAdded: (o: Office) => void;
 }) {
   const [form, setForm] = useState({
     name: "",
@@ -48,7 +48,7 @@ function AddOfficeModal({
         setError(res.error);
         return;
       }
-      onAdded();
+      if (res.office) onAdded(res.office);
       onClose();
     });
   }
@@ -193,6 +193,19 @@ function EditOfficeModal({
               />
             </div>
           ))}
+          <div>
+            <label className="text-secondary text-sm font-medium mb-1.5 block">
+              نبذة عن المكتب
+            </label>
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              className="w-full border border-border rounded-lg p-3 bg-background outline-none focus:border-primary text-text-primary text-sm resize-none"
+            />
+          </div>
         </div>
         <div className="flex justify-end gap-3 p-6 border-t border-border">
           <button
@@ -267,7 +280,6 @@ export default function AdminOfficesTable({
   const [modal, setModal] = useState<null | "add" | "edit" | "delete">(null);
   const [selected, setSelected] = useState<Office | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -275,7 +287,9 @@ export default function AdminOfficesTable({
       .filter(
         (o) =>
           o.name?.toLowerCase().includes(q) ||
-          o.address?.toLowerCase().includes(q),
+          o.address?.toLowerCase().includes(q) ||
+          o.phone?.toLowerCase().includes(q) ||
+          o.email?.toLowerCase().includes(q),
       )
       .sort(
         (a, b) =>
@@ -305,7 +319,7 @@ export default function AdminOfficesTable({
       {modal === "add" && (
         <AddOfficeModal
           onClose={() => setModal(null)}
-          onAdded={() => setRefreshKey((k) => k + 1)}
+          onAdded={(o) => setOffices((p) => [o, ...p])}
         />
       )}
       {modal === "edit" && selected && (

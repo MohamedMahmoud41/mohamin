@@ -2,6 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Office } from "@/types";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapOffice(row: Record<string, any>): Office {
+  return {
+    id: row.id,
+    name: row.name,
+    address: row.address ?? "",
+    phone: row.phone ?? "",
+    email: row.email ?? "",
+    description: row.description ?? "",
+    ownerId: row.owner_id ?? "",
+    membersIds: row.members_ids ?? [],
+    casesIds: row.cases_ids ?? [],
+    createdAt: row.created_at,
+  };
+}
 
 export async function adminCreateOffice(data: {
   name: string;
@@ -9,19 +26,24 @@ export async function adminCreateOffice(data: {
   email: string;
   phone: string;
   description: string;
-}): Promise<{ error: string | null }> {
+}): Promise<{ error: string | null; office?: Office }> {
   const supabase = await createClient();
-  const { error } = await supabase.from("offices").insert({
-    name: data.name,
-    address: data.address,
-    email: data.email,
-    phone: data.phone,
-    description: data.description,
-    members_ids: [],
-    cases_ids: [],
-  });
+  const { data: row, error } = await supabase
+    .from("offices")
+    .insert({
+      name: data.name,
+      address: data.address,
+      email: data.email,
+      phone: data.phone,
+      description: data.description,
+      members_ids: [],
+      cases_ids: [],
+    })
+    .select()
+    .single();
   revalidatePath("/admin/owners");
-  return { error: error?.message ?? null };
+  if (error) return { error: error.message };
+  return { error: null, office: mapOffice(row) };
 }
 
 export async function adminUpdateOffice(

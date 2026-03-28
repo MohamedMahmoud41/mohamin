@@ -12,6 +12,20 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Post, ApiResponse } from "@/types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPost(row: Record<string, any>): Post {
+  return {
+    id: row.id,
+    postTitle: row.post_title,
+    postContent: row.post_content ?? "",
+    postOfficeName: row.post_office_name ?? "",
+    officeId: row.office_id ?? "",
+    authorId: row.author_id ?? "",
+    postTime: row.post_time ?? "",
+    createdAt: row.created_at,
+  };
+}
+
 export async function getAllPosts(): Promise<ApiResponse<Post[]>> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -19,7 +33,7 @@ export async function getAllPosts(): Promise<ApiResponse<Post[]>> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  return { data: (data as Post[]) ?? [], error: error?.message ?? null };
+  return { data: (data ?? []).map(mapPost), error: error?.message ?? null };
 }
 
 export async function getPostById(
@@ -32,7 +46,7 @@ export async function getPostById(
     .eq("id", id)
     .single();
 
-  return { data: (data as Post) ?? null, error: error?.message ?? null };
+  return { data: data ? mapPost(data) : null, error: error?.message ?? null };
 }
 
 export async function createPost(
@@ -45,7 +59,7 @@ export async function createPost(
     .select()
     .single();
 
-  return { data: (data as Post) ?? null, error: error?.message ?? null };
+  return { data: data ? mapPost(data) : null, error: error?.message ?? null };
 }
 
 export async function deletePost(id: string): Promise<ApiResponse<null>> {

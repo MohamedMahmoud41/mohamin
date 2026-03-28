@@ -2,17 +2,30 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Court } from "@/types";
+
+function mapCourt(row: Record<string, unknown>): Court {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    city: row.city as string,
+    createdAt: row.created_at as string,
+  };
+}
 
 export async function adminCreateCourt(data: {
   name: string;
   city: string;
-}): Promise<{ error: string | null }> {
+}): Promise<{ error: string | null; court?: Court }> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: row, error } = await supabase
     .from("courts")
-    .insert({ name: data.name, city: data.city });
+    .insert({ name: data.name, city: data.city })
+    .select()
+    .single();
   revalidatePath("/admin/courts");
-  return { error: error?.message ?? null };
+  if (error) return { error: error.message };
+  return { error: null, court: mapCourt(row) };
 }
 
 export async function adminUpdateCourt(
