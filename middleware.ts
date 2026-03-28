@@ -1,24 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Next.js 15 Middleware — Auth Guard
- *
- * Replaces the old React project's:
- *   - src/layout/ProtectedRoute.jsx
- *   - src/layout/AdminProtectedRoute.jsx
- *   - src/layout/PublicRoute.jsx
- *
- * Runs on the Edge before every matched request.
- *
- * Route protection rules:
- *   /dashboard, /cases, /office, /posts, /reports, /lawyers, /settings
- *     → require authenticated session → redirect to /login
- *   /admin/*
- *     → require authenticated session + role === 'admin'
- *   /login, /signup, /forgot-password
- *     → redirect authenticated users to /dashboard
- */
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -71,9 +53,11 @@ export async function middleware(request: NextRequest) {
     "/dashboard",
     "/cases",
     "/office",
+    "/office-setup",
     "/posts",
     "/reports",
     "/lawyers",
+    "/missions",
     "/settings",
     "/admin",
   ];
@@ -83,18 +67,47 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // ── Admin-only routes ────────────────────────────────────────────────────
-  if (pathname.startsWith("/admin") && user) {
-    // TODO: fetch user role from Supabase DB and check role === 'admin'
-    // const { data: profile } = await supabase
-    //   .from("users")
-    //   .select("role")
-    //   .eq("id", user.id)
-    //   .single();
-    //
-    // if (!profile?.role?.includes("admin")) {
-    //   return NextResponse.redirect(new URL("/dashboard", request.url));
-    // }
+  // ── Ban / expiry / role checks for logged-in users on protected routes ──
+  if (isProtected && user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("is_banned, is_test, created_at, role")
+      .eq("id", user.id)
+      .single();
+
+    // Banned account
+    if (profile?.is_banned) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("reason", "banned");
+      const redirect = NextResponse.redirect(url);
+      for (const cookie of supabaseResponse.cookies.getAll()) {
+        redirect.cookies.set(cookie.name, cookie.value, cookie);
+      }
+      return redirect;
+    }
+
+    // Expired test account (72h)
+    if (profile?.is_test) {
+      const age = Date.now() - new Date(profile.created_at).getTime();
+      if (age > 72 * 60 * 60 * 1000) {
+        await supabase.auth.signOut();
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        url.searchParams.set("reason", "expired");
+        const redirect = NextResponse.redirect(url);
+        for (const cookie of supabaseResponse.cookies.getAll()) {
+          redirect.cookies.set(cookie.name, cookie.value, cookie);
+        }
+        return redirect;
+      }
+    }
+
+    // Admin-only routes
+    if (pathname.startsWith("/admin") && !profile?.role?.includes("admin")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
   return supabaseResponse;
@@ -102,13 +115,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths EXCEPT:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public assets
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

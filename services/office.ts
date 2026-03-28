@@ -7,6 +7,22 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Office, ApiResponse } from "@/types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapOffice(row: Record<string, any>): Office {
+  return {
+    id: row.id,
+    name: row.name,
+    address: row.address,
+    phone: row.phone,
+    email: row.email,
+    description: row.description,
+    ownerId: row.owner_id,
+    membersIds: row.members_ids ?? [],
+    casesIds: row.cases_ids ?? [],
+    createdAt: row.created_at,
+  };
+}
+
 export async function getOfficeById(
   id: string,
 ): Promise<ApiResponse<Office | null>> {
@@ -17,7 +33,7 @@ export async function getOfficeById(
     .eq("id", id)
     .single();
 
-  return { data: (data as Office) ?? null, error: error?.message ?? null };
+  return { data: data ? mapOffice(data) : null, error: error?.message ?? null };
 }
 
 export async function getAllOffices(): Promise<ApiResponse<Office[]>> {
@@ -27,7 +43,10 @@ export async function getAllOffices(): Promise<ApiResponse<Office[]>> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  return { data: (data as Office[]) ?? [], error: error?.message ?? null };
+  return {
+    data: data ? data.map(mapOffice) : [],
+    error: error?.message ?? null,
+  };
 }
 
 export async function createOffice(
@@ -40,7 +59,7 @@ export async function createOffice(
     .select()
     .single();
 
-  return { data: (data as Office) ?? null, error: error?.message ?? null };
+  return { data: data ? mapOffice(data) : null, error: error?.message ?? null };
 }
 
 export async function updateOffice(
@@ -55,5 +74,5 @@ export async function updateOffice(
     .select()
     .single();
 
-  return { data: (data as Office) ?? null, error: error?.message ?? null };
+  return { data: data ? mapOffice(data) : null, error: error?.message ?? null };
 }

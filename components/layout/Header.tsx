@@ -1,7 +1,7 @@
 "use client";
 
 // CLIENT COMPONENT — uses useState (theme, notifications panel), localStorage, onClick
-import { Settings, Bell, Scale, Moon, Sun } from "lucide-react";
+import { Settings, Bell, Scale, Moon, Sun, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -35,6 +35,7 @@ export default function Header({ user }: HeaderProps) {
   };
 
   const isOwner = user?.role?.includes("officeOwner");
+  const isAdmin = user?.role?.includes("admin");
 
   return (
     <nav className="bg-surface px-8 h-16 flex items-center justify-between border-b border-border shadow-sm flex-shrink-0 z-20">
@@ -51,6 +52,16 @@ export default function Header({ user }: HeaderProps) {
 
       {/* Action bar */}
       <div className="flex items-center gap-4">
+        {/* Admin switcher */}
+        {isAdmin && (
+          <Link
+            href="/admin/dashboard"
+            className="flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <ShieldCheck size={14} />
+            لوحة الإدارة
+          </Link>
+        )}
         <div className="flex items-center gap-4 text-primary">
           {/* Theme toggle */}
           <button
@@ -66,7 +77,7 @@ export default function Header({ user }: HeaderProps) {
           </button>
 
           {/* Notifications bell */}
-          <div className="relative">
+          <div className="relative flex items-center justify-center">
             <button
               onClick={() => setNotificationsOpen(true)}
               aria-label="الإشعارات"

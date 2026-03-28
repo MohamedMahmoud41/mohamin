@@ -5,7 +5,36 @@
  * Now uses:  Supabase `users` table
  */
 import { createClient } from "@/lib/supabase/server";
-import type { User, NotificationSettings, ApiResponse } from "@/types";
+import type {
+  User,
+  UserRole,
+  NotificationSettings,
+  ApiResponse,
+} from "@/types";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapUser(row: Record<string, any>): User {
+  return {
+    id: row.id,
+    email: row.email,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    phone: row.phone,
+    role: row.role as UserRole[],
+    officeId: row.office_id ?? null,
+    specialization: row.specialization,
+    experience: row.experience,
+    bio: row.bio,
+    profileImageUrl: row.profile_image_url,
+    privateCasesIds: row.private_cases_ids ?? [],
+    officeCasesIds: row.office_cases_ids ?? [],
+    fcmToken: row.fcm_token,
+    isBanned: row.is_banned ?? false,
+    isTest: row.is_test ?? false,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 export async function getCurrentUser(): Promise<ApiResponse<User>> {
   const supabase = await createClient();
@@ -21,7 +50,16 @@ export async function getCurrentUser(): Promise<ApiResponse<User>> {
     .eq("id", authUser.id)
     .single();
 
-  return { data: data as User | null, error: error?.message ?? null };
+  return { data: data ? mapUser(data) : null, error: error?.message ?? null };
+}
+
+export async function getAllUsers(): Promise<ApiResponse<User[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return { data: data ? data.map(mapUser) : [], error: error?.message ?? null };
 }
 
 export async function updateUserProfile(
@@ -36,7 +74,7 @@ export async function updateUserProfile(
     .select()
     .single();
 
-  return { data: data as User | null, error: error?.message ?? null };
+  return { data: data ? mapUser(data) : null, error: error?.message ?? null };
 }
 
 export async function getNotificationSettings(

@@ -5,7 +5,10 @@ export const metadata: Metadata = {
   title: "تسجيل الدخول",
 };
 
-// SERVER COMPONENT — just renders the Client form inside the auth layout
-export default function LoginPage() {
-  return <SignInForm />;
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: { reason?: string };
+}) {
+  return <SignInForm reason={searchParams.reason} />;
 }

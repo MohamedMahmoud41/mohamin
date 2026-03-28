@@ -27,6 +27,66 @@ import type {
   ApiResponse,
 } from "@/types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCase(row: Record<string, any>): Case {
+  return {
+    id: row.id,
+    caseTitle: row.case_title,
+    caseType: row.case_type,
+    caseStatus: row.case_status,
+    caseDescription: row.case_description,
+    startDate: row.start_date,
+    nextSessionDate: row.next_session_date ?? null,
+    officeId: row.office_id,
+    lawyerID: row.lawyer_id,
+    courtName: row.court_name,
+    clientName: row.client_name,
+    clientPhone: row.client_phone,
+    clientEmail: row.client_email,
+    opponentName: row.opponent_name,
+    opponentPhone: row.opponent_phone,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCaseNote(row: Record<string, any>): CaseNote {
+  return {
+    id: row.id,
+    caseId: row.case_id,
+    noteTitle: row.note_title,
+    notes: row.notes,
+    noteOwner: row.note_owner,
+    noteDate: row.note_date,
+    createdAt: row.created_at,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCaseSession(row: Record<string, any>): CaseSession {
+  return {
+    id: row.id,
+    caseId: row.case_id,
+    sessionDate: row.session_date,
+    notes: row.notes,
+    createdAt: row.created_at,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCaseAttachment(row: Record<string, any>): CaseAttachment {
+  return {
+    id: row.id,
+    caseId: row.case_id,
+    fileName: row.file_name,
+    fileUrl: row.file_url,
+    fileType: row.file_type,
+    fileSize: row.file_size,
+    uploadedAt: row.uploaded_at,
+  };
+}
+
 export async function getCaseById(caseId: string): Promise<ApiResponse<Case>> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -35,7 +95,7 @@ export async function getCaseById(caseId: string): Promise<ApiResponse<Case>> {
     .eq("id", caseId)
     .single();
 
-  return { data: data as Case | null, error: error?.message ?? null };
+  return { data: data ? mapCase(data) : null, error: error?.message ?? null };
 }
 
 export async function getCasesByIds(
@@ -48,7 +108,7 @@ export async function getCasesByIds(
     .select("*")
     .in("id", ids);
 
-  return { data: (data as Case[]) ?? [], error: error?.message ?? null };
+  return { data: data ? data.map(mapCase) : [], error: error?.message ?? null };
 }
 
 export async function getAllCases(): Promise<ApiResponse<Case[]>> {
@@ -58,7 +118,7 @@ export async function getAllCases(): Promise<ApiResponse<Case[]>> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  return { data: (data as Case[]) ?? [], error: error?.message ?? null };
+  return { data: data ? data.map(mapCase) : [], error: error?.message ?? null };
 }
 
 export async function getCaseNotes(
@@ -71,7 +131,10 @@ export async function getCaseNotes(
     .eq("case_id", caseId)
     .order("created_at", { ascending: false });
 
-  return { data: (data as CaseNote[]) ?? [], error: error?.message ?? null };
+  return {
+    data: data ? data.map(mapCaseNote) : [],
+    error: error?.message ?? null,
+  };
 }
 
 export async function getCaseSessions(
@@ -84,7 +147,10 @@ export async function getCaseSessions(
     .eq("case_id", caseId)
     .order("session_date", { ascending: true });
 
-  return { data: (data as CaseSession[]) ?? [], error: error?.message ?? null };
+  return {
+    data: data ? data.map(mapCaseSession) : [],
+    error: error?.message ?? null,
+  };
 }
 
 export async function getCasesByUser(
@@ -106,7 +172,7 @@ export async function getCasesByUser(
   }
 
   const { data, error } = await query;
-  return { data: (data as Case[]) ?? [], error: error?.message ?? null };
+  return { data: data ? data.map(mapCase) : [], error: error?.message ?? null };
 }
 
 export async function getCaseAttachments(
@@ -119,7 +185,7 @@ export async function getCaseAttachments(
     .eq("case_id", caseId);
 
   return {
-    data: (data as CaseAttachment[]) ?? [],
+    data: data ? data.map(mapCaseAttachment) : [],
     error: error?.message ?? null,
   };
 }

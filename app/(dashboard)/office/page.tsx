@@ -19,6 +19,7 @@ export default async function OfficePage() {
   if (!authUser) redirect("/login");
 
   const { data: currentUser } = await getCurrentUser();
+  console.log("🚀 ~ OfficePage ~ currentUser:", currentUser);
   if (!currentUser) redirect("/login");
 
   // No office yet → redirect to setup
@@ -53,6 +54,7 @@ export default async function OfficePage() {
     getCasesByUser(currentUser.id, currentUser.officeId),
     getMissions("office", currentUser.officeId),
   ]);
+  console.log("🚀 ~ OfficePage ~ office:", office);
 
   if (!office) {
     return (

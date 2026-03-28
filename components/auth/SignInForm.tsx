@@ -1,10 +1,9 @@
 "use client";
 
-// CLIENT COMPONENT — form state, show/hide password, submit handler
 import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Scale, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Scale, Mail, Lock, Eye, EyeOff, ShieldOff, Clock } from "lucide-react";
 import { signIn } from "@/app/actions/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -15,7 +14,19 @@ function validateEmail(value: string): string {
   return "";
 }
 
-export default function SignInForm() {
+const REASON_MESSAGES: Record<string, { icon: typeof ShieldOff; msg: string }> =
+  {
+    banned: {
+      icon: ShieldOff,
+      msg: "تم حظر هذا الحساب. تواصل مع المدير للمساعدة.",
+    },
+    expired: {
+      icon: Clock,
+      msg: "انتهت صلاحية حساب الاختبار (72 ساعة). تواصل مع المدير.",
+    },
+  };
+
+export default function SignInForm({ reason }: { reason?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,19 +47,16 @@ export default function SignInForm() {
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { error, redirectTo } = await signIn(email, password);
 
       if (error) {
-        const msg = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
-        setFormError(msg);
-        toast.error(msg);
+        setFormError(error);
+        toast.error(error);
         return;
       }
 
       toast.success("تم تسجيل الدخول بنجاح");
-      // Hard navigation ensures the browser sends fresh session cookies
-      // to the middleware on the very next request.
-      window.location.href = "/dashboard";
+      window.location.href = redirectTo ?? "/dashboard";
     } catch {
       const msg = "حدث خطأ أثناء تسجيل الدخول";
       setFormError(msg);
@@ -71,21 +79,18 @@ export default function SignInForm() {
         <p className="text-text-secondary mt-1">سجل دخولك للوصول إلى حسابك</p>
       </div>
 
-      {/* Tab switcher */}
-      <div className="flex bg-surface-hover p-1 rounded-lg mb-4 border border-border">
-        <Link
-          href="/signup"
-          className="flex-1 py-2 text-center text-text-secondary bg-transparent rounded-md hover:bg-surface transition-colors"
-        >
-          حساب جديد
-        </Link>
-        <Link
-          href="/login"
-          className="flex-1 py-2 text-center text-text-primary bg-surface rounded-md shadow-sm"
-        >
-          تسجيل الدخول
-        </Link>
-      </div>
+      {/* Reason banner (banned / expired) */}
+      {reason &&
+        REASON_MESSAGES[reason] &&
+        (() => {
+          const { icon: Icon, msg } = REASON_MESSAGES[reason];
+          return (
+            <div className="flex items-center gap-3 bg-error/10 border border-error/20 text-error rounded-xl px-4 py-3 mb-6 text-sm">
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              <span>{msg}</span>
+            </div>
+          );
+        })()}
 
       {/* Error feedback */}
       <div className="text-center text-error mb-4 min-h-6 text-sm">

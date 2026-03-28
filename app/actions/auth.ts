@@ -25,13 +25,46 @@ import { redirect } from "next/navigation";
 export async function signIn(
   email: string,
   password: string,
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; redirectTo?: string }> {
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) return { error: error.message };
-  return { error: null };
+
+  if (data.user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("is_banned, is_test, created_at, role")
+      .eq("id", data.user.id)
+      .single();
+
+    if (profile?.is_banned) {
+      await supabase.auth.signOut();
+      return { error: "تم حظر هذا الحساب. تواصل مع المدير." };
+    }
+
+    if (profile?.is_test) {
+      const age = Date.now() - new Date(profile.created_at).getTime();
+      if (age > 72 * 60 * 60 * 1000) {
+        await supabase.auth.signOut();
+        return {
+          error: "انتهت صلاحية حساب الاختبار (72 ساعة). تواصل مع المدير.",
+        };
+      }
+    }
+
+    const redirectTo = profile?.role?.includes("admin")
+      ? "/admin/dashboard"
+      : "/dashboard";
+
+    return { error: null, redirectTo };
+  }
+
+  return { error: null, redirectTo: "/dashboard" };
 }
 
 // ─── Sign Up ─────────────────────────────────────────────────────────────────

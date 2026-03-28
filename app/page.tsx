@@ -1,10 +1,34 @@
 import Link from "next/link";
-import { Scale, FolderOpen, CalendarCheck, Users, FileText, BarChart3, Bell } from "lucide-react";
+import {
+  Scale,
+  FolderOpen,
+  CalendarCheck,
+  Users,
+  FileText,
+  BarChart3,
+  Bell,
+  LayoutDashboard,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/services/users";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  let dashboardHref: string | null = null;
+  if (authUser) {
+    const { data: currentUser } = await getCurrentUser();
+    if (currentUser) {
+      dashboardHref = currentUser.role.includes("admin")
+        ? "/admin/dashboard"
+        : "/dashboard";
+    }
+  }
   return (
     <main className="min-h-screen bg-background text-text-primary" dir="rtl">
-
       {/* ── Nav ─────────────────────────────────────────────────────── */}
       <nav className="bg-surface border-b border-border sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -13,15 +37,22 @@ export default function HomePage() {
             <span>محامي</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-sm text-text-secondary hover:text-primary transition-colors px-4 py-2"
-            >
-              تسجيل الدخول
-            </Link>
-            <Link href="/signup" className="btn-primary text-sm">
-              ابدأ مجاناً
-            </Link>
+            {dashboardHref ? (
+              <Link
+                href={dashboardHref}
+                className="btn-primary text-sm flex items-center gap-2"
+              >
+                <LayoutDashboard size={16} />
+                لوحة التحكم
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm text-text-secondary hover:text-primary transition-colors px-4 py-2"
+              >
+                تسجيل الدخول
+              </Link>
+            )}
           </div>
         </div>
       </nav>
@@ -41,15 +72,12 @@ export default function HomePage() {
           </h1>
 
           <p className="text-lg text-text-secondary leading-relaxed max-w-xl mx-auto mb-10">
-            منصة متكاملة لإدارة القضايا والجلسات والموكلين والمهام اليومية لمكتبك
-            القانوني — كل ما تحتاجه في مكان واحد.
+            منصة متكاملة لإدارة القضايا والجلسات والموكلين والمهام اليومية
+            لمكتبك القانوني — كل ما تحتاجه في مكان واحد.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup" className="btn-primary text-base px-8 py-3">
-              أنشئ حسابك مجاناً
-            </Link>
-            <Link href="/login" className="btn-outline text-base px-8 py-3">
+          <div className="flex items-center justify-center">
+            <Link href="/login" className="btn-primary text-base px-8 py-3">
               تسجيل الدخول
             </Link>
           </div>
@@ -110,7 +138,9 @@ export default function HomePage() {
               <h3 className="font-bold text-text-primary mb-2 font-cairo">
                 {title}
               </h3>
-              <p className="text-sm text-text-secondary leading-relaxed">{desc}</p>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                {desc}
+              </p>
             </div>
           ))}
         </div>
@@ -122,13 +152,13 @@ export default function HomePage() {
           ابدأ إدارة مكتبك اليوم
         </h2>
         <p className="text-blue-100 mb-8 max-w-md mx-auto">
-          سجّل حسابك خلال دقيقة واحدة وابدأ بتنظيم قضاياك فوراً.
+          تواصل مع مدير النظام للحصول على حسابك وابدأ تنظيم قضاياك فوراً.
         </p>
         <Link
-          href="/signup"
+          href="/login"
           className="inline-block bg-white text-primary font-bold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors"
         >
-          إنشاء حساب مجاني
+          تسجيل الدخول
         </Link>
       </section>
 
@@ -140,7 +170,6 @@ export default function HomePage() {
         </div>
         <p>نظام إدارة مكاتب المحاماة والقضايا القانونية</p>
       </footer>
-
     </main>
   );
 }

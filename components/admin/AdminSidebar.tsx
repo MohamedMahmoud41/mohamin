@@ -12,7 +12,7 @@ import {
 
 const navItems = [
   { href: "/admin/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
-  { href: "/admin/lawyers", label: "المحامون", icon: Users },
+  { href: "/admin/users", label: "المستخدمون", icon: Users },
   { href: "/admin/owners", label: "المكاتب", icon: Building2 },
   { href: "/admin/courts", label: "المحاكم", icon: Gavel },
   { href: "/admin/posts", label: "المنشورات", icon: FileText },

@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-import SignUpForm from "@/components/auth/SignUpForm";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "إنشاء حساب",
-};
-
-// SERVER COMPONENT — just renders the Client form inside the auth layout
 export default function SignupPage() {
-  return <SignUpForm />;
+  redirect("/login");
 }

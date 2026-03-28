@@ -26,6 +26,8 @@ export interface User {
   /** Array of case IDs linked through the office */
   officeCasesIds: string[];
   fcmToken?: string;
+  isBanned: boolean;
+  isTest: boolean;
   createdAt: string;
   updatedAt: string;
 }
