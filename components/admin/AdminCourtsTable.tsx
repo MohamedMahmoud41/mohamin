@@ -263,7 +263,8 @@ export default function AdminCourtsTable({
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-border overflow-hidden">
+      {/* Table — hidden on mobile */}
+      <div className="hidden sm:block bg-surface rounded-2xl border border-border overflow-hidden">
         <table className="w-full text-right">
           <thead className="bg-beige-light/50">
             <tr>
@@ -336,6 +337,51 @@ export default function AdminCourtsTable({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Cards — visible on mobile only */}
+      <div className="sm:hidden flex flex-col gap-3">
+        {paginated.length === 0 && (
+          <div className="bg-surface rounded-2xl border border-border py-12 text-center text-text-muted text-sm">
+            لا توجد محاكم
+          </div>
+        )}
+        {paginated.map((court) => (
+          <div
+            key={court.id}
+            className="bg-surface rounded-2xl border border-border p-4 flex items-center gap-3"
+          >
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <LandmarkIcon className="w-5 h-5 text-accent" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-text-primary text-sm">
+                {court.name}
+              </div>
+              <div className="text-xs text-text-muted mt-0.5">{court.city}</div>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setSelected(court);
+                  setModal("edit");
+                }}
+                className="p-2 hover:bg-primary/10 text-primary rounded-lg transition"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  setSelected(court);
+                  setModal("delete");
+                }}
+                className="p-2 hover:bg-error/10 text-error rounded-lg transition"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {totalPages > 1 && (

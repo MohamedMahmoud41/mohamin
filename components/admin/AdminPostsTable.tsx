@@ -138,7 +138,8 @@ export default function AdminPostsTable({
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-border overflow-hidden">
+      {/* Table — hidden on mobile */}
+      <div className="hidden sm:block bg-surface rounded-2xl border border-border overflow-hidden">
         <table className="w-full text-right">
           <thead className="bg-beige-light/50">
             <tr>
@@ -204,6 +205,49 @@ export default function AdminPostsTable({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Cards — visible on mobile only */}
+      <div className="sm:hidden flex flex-col gap-3">
+        {paginated.length === 0 && (
+          <div className="bg-surface rounded-2xl border border-border py-12 text-center text-text-muted text-sm">
+            لا توجد منشورات
+          </div>
+        )}
+        {paginated.map((post) => (
+          <div
+            key={post.id}
+            className="bg-surface rounded-2xl border border-border p-4 flex items-start gap-3"
+          >
+            <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-5 h-5 text-secondary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-text-primary text-sm truncate">
+                {post.postTitle}
+              </div>
+              <div className="text-xs text-text-muted mt-0.5 line-clamp-2">
+                {post.postContent?.slice(0, 80)}...
+              </div>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                {post.postOfficeName && (
+                  <span className="text-xs text-text-secondary">
+                    {post.postOfficeName}
+                  </span>
+                )}
+                <span className="text-xs text-text-muted">
+                  {formatDate(post.createdAt)}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelected(post)}
+              className="p-2 hover:bg-error/10 text-error rounded-lg transition flex-shrink-0"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
       </div>
 
       {totalPages > 1 && (

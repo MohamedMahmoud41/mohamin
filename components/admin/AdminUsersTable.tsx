@@ -756,7 +756,7 @@ export default function AdminUsersTable({
       </div>
 
       {/* Table */}
-      <div className="bg-surface rounded-2xl border border-border overflow-hidden">
+      <div className="hidden sm:block bg-surface rounded-2xl border border-border overflow-hidden">
         <table className="w-full text-right">
           <thead className="bg-beige-light/50">
             <tr>
@@ -965,6 +965,162 @@ export default function AdminUsersTable({
                 التالي
               </button>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Cards — visible on mobile only */}
+      <div className="sm:hidden flex flex-col gap-3">
+        {paginated.length === 0 && (
+          <div className="bg-surface rounded-2xl border border-border py-12 text-center text-text-muted text-sm">
+            لا يوجد مستخدمون
+          </div>
+        )}
+        {paginated.map((user) => {
+          const name = `${user.firstName} ${user.lastName}`;
+          const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`;
+          const isExpired =
+            user.isTest &&
+            Date.now() - new Date(user.createdAt).getTime() >
+              72 * 60 * 60 * 1000;
+          return (
+            <div
+              key={user.id}
+              className={`bg-surface rounded-2xl border border-border p-4 flex items-start gap-3 ${user.isBanned ? "opacity-60" : ""}`}
+            >
+              <div className="w-10 h-10 rounded-full bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                {user.profileImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.profileImageUrl}
+                    alt={initials}
+                    className="w-full h-full object-cover"
+                  />
+                ) : initials ? (
+                  initials
+                ) : (
+                  <UserIcon size={16} />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-text-primary text-sm">
+                  {name}
+                </div>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {user.role.map((r) => (
+                    <RoleBadge key={r} role={r} />
+                  ))}
+                </div>
+                <div className="mt-1.5 space-y-1">
+                  <div className="flex items-center gap-1 text-xs text-text-secondary">
+                    <Mail className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate">{user.email}</span>
+                  </div>
+                  {user.phone && (
+                    <div className="flex items-center gap-1 text-xs text-text-secondary">
+                      <Phone className="w-3 h-3 flex-shrink-0" />
+                      {user.phone}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2">
+                  {user.isBanned ? (
+                    <span className="inline-flex items-center gap-1 text-xs bg-error/10 text-error px-2 py-1 rounded-full font-medium">
+                      <ShieldOff size={12} /> محظور
+                    </span>
+                  ) : user.isTest ? (
+                    <span
+                      className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${
+                        isExpired
+                          ? "bg-error/10 text-error"
+                          : "bg-warning/10 text-warning"
+                      }`}
+                    >
+                      <Clock size={12} />
+                      {isExpired ? "منتهية" : testTimeRemaining(user.createdAt)}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs bg-success/10 text-success px-2 py-1 rounded-full font-medium">
+                      <ShieldCheck size={12} /> نشط
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setSelected(user);
+                    setModal("edit");
+                  }}
+                  className="p-2 hover:bg-primary/10 text-primary rounded-lg transition"
+                  title="تعديل"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleBanToggle(user)}
+                  disabled={isPending}
+                  className={`p-2 rounded-lg transition disabled:opacity-40 ${
+                    user.isBanned
+                      ? "hover:bg-success/10 text-success"
+                      : "hover:bg-warning/10 text-warning"
+                  }`}
+                  title={user.isBanned ? "رفع الحظر" : "حظر"}
+                >
+                  {user.isBanned ? (
+                    <ShieldCheck className="w-4 h-4" />
+                  ) : (
+                    <ShieldOff className="w-4 h-4" />
+                  )}
+                </button>
+                <button
+                  onClick={() => handleTestToggle(user)}
+                  disabled={isPending}
+                  className={`p-2 rounded-lg transition disabled:opacity-40 ${
+                    user.isTest
+                      ? "hover:bg-warning/10 text-warning"
+                      : "hover:bg-gray-100 text-text-muted hover:text-warning"
+                  }`}
+                  title={
+                    user.isTest ? "إلغاء وضع الاختبار" : "تفعيل وضع الاختبار"
+                  }
+                >
+                  <FlaskConical className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelected(user);
+                    setModal("delete");
+                  }}
+                  className="p-2 hover:bg-error/10 text-error rounded-lg transition"
+                  title="حذف"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {/* Mobile pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-4 py-2 text-sm border border-border rounded-lg disabled:opacity-40 hover:bg-beige-light transition"
+            >
+              السابق
+            </button>
+            <span className="text-sm text-text-muted">
+              {page} / {totalPages}
+            </span>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-4 py-2 text-sm border border-border rounded-lg disabled:opacity-40 hover:bg-beige-light transition"
+            >
+              التالي
+            </button>
           </div>
         )}
       </div>

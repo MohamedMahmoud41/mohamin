@@ -114,7 +114,7 @@ export default function AdminDashboard({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map(({ label, value, icon: Icon, sub }) => (
           <div
             key={label}
@@ -140,8 +140,8 @@ export default function AdminDashboard({
       </div>
 
       {/* Activity chart */}
-      <div className="bg-surface p-6 rounded-2xl border border-border">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-surface p-4 md:p-6 rounded-2xl border border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h2 className="text-lg font-bold text-text-primary">نشاط النظام</h2>
             <span className="text-sm text-text-muted">
@@ -192,7 +192,7 @@ export default function AdminDashboard({
       {/* ─── Offices section ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Office mini-stats */}
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
           <div className="bg-surface p-5 rounded-2xl border border-border flex items-center gap-4">
             <div className="w-11 h-11 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
               <UserCheck className="w-5 h-5 text-success" />
@@ -250,62 +250,103 @@ export default function AdminDashboard({
               لا توجد مكاتب مسجلة
             </p>
           ) : (
-            <table className="w-full text-right">
-              <thead className="bg-beige-light/50">
-                <tr>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-muted">
-                    المكتب
-                  </th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-muted">
-                    العنوان
-                  </th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-muted text-center">
-                    الأعضاء
-                  </th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-muted text-center">
-                    مالك
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {topOffices.map((office) => (
-                  <tr
-                    key={office.id}
-                    className="hover:bg-beige-light/30 transition"
-                  >
-                    <td className="px-6 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Building2 className="w-4 h-4 text-primary" />
+            <>
+              {/* Table — hidden on mobile */}
+              <table className="hidden sm:table w-full text-right">
+                <thead className="bg-beige-light/50">
+                  <tr>
+                    <th className="px-6 py-3 text-xs font-semibold text-text-muted">
+                      المكتب
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold text-text-muted">
+                      العنوان
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold text-text-muted text-center">
+                      الأعضاء
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold text-text-muted text-center">
+                      مالك
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {topOffices.map((office) => (
+                    <tr
+                      key={office.id}
+                      className="hover:bg-beige-light/30 transition"
+                    >
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Building2 className="w-4 h-4 text-primary" />
+                          </div>
+                          <span className="text-sm font-semibold text-text-primary truncate max-w-[140px]">
+                            {office.name}
+                          </span>
                         </div>
-                        <span className="text-sm font-semibold text-text-primary truncate max-w-[140px]">
-                          {office.name}
+                      </td>
+                      <td className="px-6 py-3 text-sm text-text-secondary truncate max-w-[120px]">
+                        {office.address || "—"}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <span className="inline-block bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
+                          {office.membersIds?.length ?? 0}
                         </span>
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        {office.ownerId ? (
+                          <span className="inline-block bg-success/10 text-success text-xs font-medium px-2 py-0.5 rounded-full">
+                            نعم
+                          </span>
+                        ) : (
+                          <span className="inline-block bg-warning/10 text-warning text-xs font-medium px-2 py-0.5 rounded-full">
+                            لا
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Cards — visible on mobile only */}
+              <div className="sm:hidden flex flex-col divide-y divide-border">
+                {topOffices.map((office) => (
+                  <div
+                    key={office.id}
+                    className="flex items-center gap-3 px-4 py-3"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-text-primary truncate">
+                        {office.name}
                       </div>
-                    </td>
-                    <td className="px-6 py-3 text-sm text-text-secondary truncate max-w-[120px]">
-                      {office.address || "—"}
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                      <span className="inline-block bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
+                      {office.address && (
+                        <div className="text-xs text-text-muted truncate mt-0.5">
+                          {office.address}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
                         {office.membersIds?.length ?? 0}
                       </span>
-                    </td>
-                    <td className="px-6 py-3 text-center">
                       {office.ownerId ? (
-                        <span className="inline-block bg-success/10 text-success text-xs font-medium px-2 py-0.5 rounded-full">
+                        <span className="bg-success/10 text-success text-xs font-medium px-2 py-0.5 rounded-full">
                           نعم
                         </span>
                       ) : (
-                        <span className="inline-block bg-warning/10 text-warning text-xs font-medium px-2 py-0.5 rounded-full">
+                        <span className="bg-warning/10 text-warning text-xs font-medium px-2 py-0.5 rounded-full">
                           لا
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -369,7 +369,8 @@ export default function AdminLawyersTable({
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-border overflow-hidden">
+      {/* Table — hidden on mobile */}
+      <div className="hidden sm:block bg-surface rounded-2xl border border-border overflow-hidden">
         <table className="w-full text-right">
           <thead className="bg-beige-light/50">
             <tr>
@@ -473,6 +474,81 @@ export default function AdminLawyersTable({
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Cards — visible on mobile only */}
+      <div className="sm:hidden flex flex-col gap-3">
+        {paginated.length === 0 && (
+          <div className="bg-surface rounded-2xl border border-border py-12 text-center text-text-muted text-sm">
+            لا يوجد محامون
+          </div>
+        )}
+        {paginated.map((lawyer) => {
+          const name = `${lawyer.firstName} ${lawyer.lastName}`;
+          const initials = `${lawyer.firstName?.[0] ?? ""}${lawyer.lastName?.[0] ?? ""}`;
+          return (
+            <div
+              key={lawyer.id}
+              className="bg-surface rounded-2xl border border-border p-4 flex items-start gap-3"
+            >
+              {lawyer.profileImageUrl ? (
+                <img
+                  src={lawyer.profileImageUrl}
+                  alt={initials}
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  {initials}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-text-primary text-sm">
+                  {name}
+                </div>
+                {lawyer.specialization && (
+                  <div className="text-xs text-text-muted mt-0.5">
+                    {lawyer.specialization}
+                  </div>
+                )}
+                <div className="mt-1.5 space-y-1">
+                  {lawyer.email && (
+                    <div className="flex items-center gap-1 text-xs text-text-secondary">
+                      <Mail className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{lawyer.email}</span>
+                    </div>
+                  )}
+                  {lawyer.phone && (
+                    <div className="flex items-center gap-1 text-xs text-text-secondary">
+                      <Phone className="w-3 h-3 flex-shrink-0" />
+                      {lawyer.phone}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setSelected(lawyer);
+                    setModal("edit");
+                  }}
+                  className="p-2 hover:bg-primary/10 text-primary rounded-lg transition"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelected(lawyer);
+                    setModal("delete");
+                  }}
+                  className="p-2 hover:bg-error/10 text-error rounded-lg transition"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {totalPages > 1 && (
