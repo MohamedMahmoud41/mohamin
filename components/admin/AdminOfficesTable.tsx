@@ -10,22 +10,92 @@ import {
   MapPin,
   Phone,
   Building2,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import {
   adminCreateOffice,
   adminUpdateOffice,
   adminDeleteOffice,
 } from "@/app/actions/admin/offices";
-import type { Office } from "@/types";
+import type { Office, User } from "@/types";
 
 const ITEMS_PER_PAGE = 8;
+
+// ─── Multi-select lawyers dropdown ───────────────────────────────────────────
+
+function LawyersMultiSelect({
+  lawyers,
+  selected,
+  onChange,
+}: {
+  lawyers: User[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const toggle = (id: string) =>
+    onChange(
+      selected.includes(id)
+        ? selected.filter((s) => s !== id)
+        : [...selected, id],
+    );
+  const label =
+    selected.length === 0
+      ? "اختر المحامين..."
+      : `${selected.length} محامي محدد`;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between border border-border rounded-lg p-3 bg-background text-text-primary text-sm outline-none focus:border-primary"
+      >
+        <span className={selected.length === 0 ? "text-text-muted" : ""}>
+          {label}
+        </span>
+        <ChevronDown className="w-4 h-4 text-text-muted" />
+      </button>
+      {open && (
+        <div className="absolute z-10 mt-1 w-full bg-surface border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {lawyers.length === 0 && (
+            <p className="px-4 py-3 text-text-muted text-sm">
+              لا يوجد محامون مسجلون
+            </p>
+          )}
+          {lawyers.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => toggle(l.id)}
+              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-beige-light transition text-sm text-text-primary"
+            >
+              <span>
+                {l.firstName} {l.lastName}
+                <span className="text-text-muted text-xs mr-2">{l.email}</span>
+              </span>
+              {selected.includes(l.id) && (
+                <Check className="w-4 h-4 text-primary" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AddOfficeModal({
   onClose,
   onAdded,
+  eligibleOwners,
+  eligibleLawyers,
 }: {
   onClose: () => void;
   onAdded: (o: Office) => void;
+  eligibleOwners: User[];
+  eligibleLawyers: User[];
 }) {
   const [form, setForm] = useState({
     name: "",
@@ -34,6 +104,8 @@ function AddOfficeModal({
     phone: "",
     description: "",
   });
+  const [ownerId, setOwnerId] = useState("");
+  const [lawyerIds, setLawyerIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +115,11 @@ function AddOfficeModal({
       return;
     }
     startTransition(async () => {
-      const res = await adminCreateOffice(form);
+      const res = await adminCreateOffice({
+        ...form,
+        ownerId: ownerId || undefined,
+        lawyerIds,
+      });
       if (res.error) {
         setError(res.error);
         return;
@@ -62,7 +138,7 @@ function AddOfficeModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-surface rounded-2xl w-full max-w-lg shadow-xl">
+      <div className="bg-surface rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-border">
           <p className="text-primary text-xl font-bold">إضافة مكتب جديد</p>
           <button
@@ -104,6 +180,37 @@ function AddOfficeModal({
               className="w-full border border-border rounded-lg p-3 bg-background outline-none focus:border-primary text-text-primary text-sm resize-none"
             />
           </div>
+
+          {/* Office Owner */}
+          <div className="col-span-2">
+            <label className="text-secondary text-sm font-medium mb-1.5 block">
+              مالك المكتب
+            </label>
+            <select
+              value={ownerId}
+              onChange={(e) => setOwnerId(e.target.value)}
+              className="w-full border border-border rounded-lg p-3 bg-background outline-none focus:border-primary text-text-primary text-sm"
+            >
+              <option value="">-- اختر مالك المكتب --</option>
+              {eligibleOwners.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.firstName} {u.lastName} ({u.email})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lawyers */}
+          <div className="col-span-2">
+            <label className="text-secondary text-sm font-medium mb-1.5 block">
+              المحامون
+            </label>
+            <LawyersMultiSelect
+              lawyers={eligibleLawyers}
+              selected={lawyerIds}
+              onChange={setLawyerIds}
+            />
+          </div>
         </div>
         <div className="flex justify-end gap-3 p-6 border-t border-border">
           <button
@@ -129,10 +236,14 @@ function EditOfficeModal({
   office,
   onClose,
   onUpdated,
+  eligibleOwners,
+  eligibleLawyers,
 }: {
   office: Office;
   onClose: () => void;
   onUpdated: (o: Office) => void;
+  eligibleOwners: User[];
+  eligibleLawyers: User[];
 }) {
   const [form, setForm] = useState({
     name: office.name,
@@ -141,24 +252,36 @@ function EditOfficeModal({
     phone: office.phone,
     description: office.description,
   });
+  const [ownerId, setOwnerId] = useState(office.ownerId ?? "");
+  const [lawyerIds, setLawyerIds] = useState<string[]>(
+    // pre-select lawyers: members excluding the owner
+    office.membersIds.filter((id) => id !== office.ownerId),
+  );
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   function handleSubmit() {
     startTransition(async () => {
-      const res = await adminUpdateOffice(office.id, form);
+      const res = await adminUpdateOffice(office.id, {
+        ...form,
+        ownerId: ownerId || undefined,
+        lawyerIds,
+      });
       if (res.error) {
         setError(res.error);
         return;
       }
-      onUpdated({ ...office, ...form });
+      const newMembers = Array.from(
+        new Set([...(ownerId ? [ownerId] : []), ...lawyerIds]),
+      );
+      onUpdated({ ...office, ...form, ownerId, membersIds: newMembers });
       onClose();
     });
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-surface rounded-2xl w-full max-w-md shadow-xl">
+      <div className="bg-surface rounded-2xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-border">
           <p className="text-primary text-xl font-bold">تعديل بيانات المكتب</p>
           <button
@@ -204,6 +327,37 @@ function EditOfficeModal({
                 setForm({ ...form, description: e.target.value })
               }
               className="w-full border border-border rounded-lg p-3 bg-background outline-none focus:border-primary text-text-primary text-sm resize-none"
+            />
+          </div>
+
+          {/* Office Owner */}
+          <div>
+            <label className="text-secondary text-sm font-medium mb-1.5 block">
+              مالك المكتب
+            </label>
+            <select
+              value={ownerId}
+              onChange={(e) => setOwnerId(e.target.value)}
+              className="w-full border border-border rounded-lg p-3 bg-background outline-none focus:border-primary text-text-primary text-sm"
+            >
+              <option value="">-- اختر مالك المكتب --</option>
+              {eligibleOwners.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.firstName} {u.lastName} ({u.email})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lawyers */}
+          <div>
+            <label className="text-secondary text-sm font-medium mb-1.5 block">
+              المحامون
+            </label>
+            <LawyersMultiSelect
+              lawyers={eligibleLawyers}
+              selected={lawyerIds}
+              onChange={setLawyerIds}
             />
           </div>
         </div>
@@ -271,8 +425,12 @@ function DeleteModal({
 
 export default function AdminOfficesTable({
   initialOffices,
+  eligibleOwners,
+  eligibleLawyers,
 }: {
   initialOffices: Office[];
+  eligibleOwners: User[];
+  eligibleLawyers: User[];
 }) {
   const [offices, setOffices] = useState<Office[]>(initialOffices);
   const [search, setSearch] = useState("");
@@ -320,6 +478,8 @@ export default function AdminOfficesTable({
         <AddOfficeModal
           onClose={() => setModal(null)}
           onAdded={(o) => setOffices((p) => [o, ...p])}
+          eligibleOwners={eligibleOwners}
+          eligibleLawyers={eligibleLawyers}
         />
       )}
       {modal === "edit" && selected && (
@@ -329,6 +489,8 @@ export default function AdminOfficesTable({
           onUpdated={(updated) =>
             setOffices((p) => p.map((o) => (o.id === updated.id ? updated : o)))
           }
+          eligibleOwners={eligibleOwners}
+          eligibleLawyers={eligibleLawyers}
         />
       )}
       {modal === "delete" && selected && (

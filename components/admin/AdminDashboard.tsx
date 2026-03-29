@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { Users, Building2, Gavel, FileText, TrendingUp } from "lucide-react";
+import {
+  Users,
+  Building2,
+  Gavel,
+  FileText,
+  TrendingUp,
+  UserCheck,
+  AlertCircle,
+} from "lucide-react";
 import type { Lawyer, Office, Court, Post, Case } from "@/types";
 
 const ARABIC_MONTHS = [
@@ -81,6 +89,19 @@ export default function AdminDashboard({
   const maxVal = Math.max(
     ...chartData.map((d) => Math.max(d.cases, d.lawyers)),
     1,
+  );
+
+  // ─── Offices stats ──────────────────────────────────────────────────────────
+  const officesWithOwner = offices.filter((o) => !!o.ownerId).length;
+  const officesWithoutOwner = offices.length - officesWithOwner;
+  const topOffices = useMemo(
+    () =>
+      [...offices]
+        .sort(
+          (a, b) => (b.membersIds?.length ?? 0) - (a.membersIds?.length ?? 0),
+        )
+        .slice(0, 5),
+    [offices],
   );
 
   return (
@@ -165,6 +186,127 @@ export default function AdminDashboard({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* ─── Offices section ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Office mini-stats */}
+        <div className="flex flex-col gap-4">
+          <div className="bg-surface p-5 rounded-2xl border border-border flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+              <UserCheck className="w-5 h-5 text-success" />
+            </div>
+            <div>
+              <p className="text-text-muted text-xs">مكاتب لها مالك</p>
+              <p className="text-2xl font-bold text-text-primary">
+                {officesWithOwner}
+              </p>
+            </div>
+          </div>
+          <div className="bg-surface p-5 rounded-2xl border border-border flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-warning" />
+            </div>
+            <div>
+              <p className="text-text-muted text-xs">مكاتب بدون مالك</p>
+              <p className="text-2xl font-bold text-text-primary">
+                {officesWithoutOwner}
+              </p>
+            </div>
+          </div>
+          <div className="bg-surface p-5 rounded-2xl border border-border flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-text-muted text-xs">متوسط الأعضاء / مكتب</p>
+              <p className="text-2xl font-bold text-text-primary">
+                {offices.length > 0
+                  ? Math.round(
+                      offices.reduce(
+                        (s, o) => s + (o.membersIds?.length ?? 0),
+                        0,
+                      ) / offices.length,
+                    )
+                  : 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Top offices table */}
+        <div className="lg:col-span-2 bg-surface rounded-2xl border border-border overflow-hidden">
+          <div className="px-6 py-4 border-b border-border">
+            <h2 className="text-lg font-bold text-text-primary">
+              أبرز المكاتب
+            </h2>
+            <p className="text-text-muted text-xs mt-0.5">
+              المكاتب الأعلى من حيث عدد الأعضاء
+            </p>
+          </div>
+          {offices.length === 0 ? (
+            <p className="text-center text-text-muted py-10 text-sm">
+              لا توجد مكاتب مسجلة
+            </p>
+          ) : (
+            <table className="w-full text-right">
+              <thead className="bg-beige-light/50">
+                <tr>
+                  <th className="px-6 py-3 text-xs font-semibold text-text-muted">
+                    المكتب
+                  </th>
+                  <th className="px-6 py-3 text-xs font-semibold text-text-muted">
+                    العنوان
+                  </th>
+                  <th className="px-6 py-3 text-xs font-semibold text-text-muted text-center">
+                    الأعضاء
+                  </th>
+                  <th className="px-6 py-3 text-xs font-semibold text-text-muted text-center">
+                    مالك
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {topOffices.map((office) => (
+                  <tr
+                    key={office.id}
+                    className="hover:bg-beige-light/30 transition"
+                  >
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Building2 className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-semibold text-text-primary truncate max-w-[140px]">
+                          {office.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3 text-sm text-text-secondary truncate max-w-[120px]">
+                      {office.address || "—"}
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <span className="inline-block bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
+                        {office.membersIds?.length ?? 0}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      {office.ownerId ? (
+                        <span className="inline-block bg-success/10 text-success text-xs font-medium px-2 py-0.5 rounded-full">
+                          نعم
+                        </span>
+                      ) : (
+                        <span className="inline-block bg-warning/10 text-warning text-xs font-medium px-2 py-0.5 rounded-full">
+                          لا
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
