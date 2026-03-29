@@ -245,17 +245,17 @@ export default function EditCaseForm({
         await deleteCaseSession(caseItem.id, editingSessionId);
         const result = await addCaseSession(caseItem.id, sessionData);
         if (!result?.error) {
-          setLocalSessions((prev) =>
-            prev
-              .filter((s) => s.id !== editingSessionId)
-              .concat({
-                id: result.data?.id ?? Date.now().toString(),
-                caseId: caseItem.id,
-                sessionDate: newSession.datetime,
-                notes: newSession.notes,
-                createdAt: new Date().toISOString(),
-              }),
-          );
+          setLocalSessions((prev) => [
+            ...prev.filter((s) => s.id !== editingSessionId),
+            {
+              id: result.data?.id ?? Date.now().toString(),
+              caseId: caseItem.id,
+              sessionDate: newSession.datetime,
+              status: "upcoming" as const,
+              notes: newSession.notes,
+              createdAt: new Date().toISOString(),
+            },
+          ]);
         }
         setEditingSessionId(null);
       } else {
@@ -271,6 +271,7 @@ export default function EditCaseForm({
               id: result.data?.id ?? Date.now().toString(),
               caseId: caseItem.id,
               sessionDate: newSession.datetime,
+              status: "upcoming" as const,
               notes: newSession.notes,
               createdAt: new Date().toISOString(),
             },
@@ -1029,6 +1030,9 @@ export default function EditCaseForm({
               >
                 <option value="" disabled>
                   اختر المحامي
+                </option>
+                <option value={currentUser.id}>
+                  {currentUser.firstName} {currentUser.lastName} (أنا)
                 </option>
                 {lawyers
                   .filter((l) => l.id !== currentUser.id)

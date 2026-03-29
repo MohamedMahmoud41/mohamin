@@ -111,6 +111,7 @@ function MissionItem({
 
 function AddMissionModal({
   onClose,
+  onCreated,
   contextType,
   contextId,
   lawyers,
@@ -118,6 +119,7 @@ function AddMissionModal({
   isOwner,
 }: {
   onClose: () => void;
+  onCreated: (mission: Mission) => void;
   contextType: "user" | "office";
   contextId: string;
   lawyers: Lawyer[];
@@ -135,7 +137,10 @@ function AddMissionModal({
   const handleSubmit = () => {
     if (!form.title || !form.dueDate) return;
     startTransition(async () => {
-      await createMission({ ...form, contextType, contextId });
+      const result = await createMission({ ...form, contextType, contextId });
+      if (result.data) {
+        onCreated(result.data);
+      }
       onClose();
     });
   };
@@ -363,6 +368,7 @@ export default function OfficeDashboard({
       {showAddMission && (
         <AddMissionModal
           onClose={() => setShowAddMission(false)}
+          onCreated={(m) => setLocalMissions((prev) => [m, ...prev])}
           contextType="office"
           contextId={office.id}
           lawyers={memberLawyers}
@@ -382,7 +388,7 @@ export default function OfficeDashboard({
           </div>
           {isOwner && (
             <Link
-              href="/office-setup"
+              href="/office/edit"
               className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition"
             >
               تعديل معلومات المكتب

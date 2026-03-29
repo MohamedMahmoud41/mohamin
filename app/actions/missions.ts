@@ -35,7 +35,23 @@ export async function createMission(data: {
 
   revalidatePath("/missions");
   revalidatePath("/office");
-  return { data: result as Mission | null, error: error?.message ?? null };
+  if (error) return { data: null, error: error.message };
+  return {
+    data: result
+      ? {
+          id: result.id,
+          title: result.title,
+          description: result.description,
+          isCompleted: result.is_completed ?? false,
+          assignedTo: result.assigned_to ?? null,
+          contextType: result.context_type,
+          contextId: result.context_id,
+          dueDate: result.due_date,
+          createdAt: result.created_at,
+        }
+      : null,
+    error: null,
+  };
 }
 
 export async function toggleMission(

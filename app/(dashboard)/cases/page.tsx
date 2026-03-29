@@ -15,9 +15,10 @@ export default async function CasesPage() {
   if (!authUser) redirect("/login");
 
   const { data: user } = await getCurrentUser();
+  const isOwner = user?.role.includes("officeOwner") ?? false;
   const { data: cases = [] } = await getCasesByUser(
     authUser.id,
-    user?.officeId ?? null,
+    isOwner ? (user?.officeId ?? null) : null,
   );
 
   return (

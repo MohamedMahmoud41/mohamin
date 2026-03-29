@@ -54,6 +54,45 @@ export async function setupOffice(data: {
   return { error: null };
 }
 
+export async function updateUserOffice(data: {
+  name: string;
+  address: string;
+  email: string;
+  phone: string;
+  description: string;
+}): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "غير مصرح" };
+
+  const { data: currentUser } = await supabase
+    .from("users")
+    .select("office_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!currentUser?.office_id) return { error: "لا يوجد مكتب مرتبط بحسابك" };
+
+  const { error: updateError } = await supabase
+    .from("offices")
+    .update({
+      name: data.name,
+      address: data.address,
+      email: data.email,
+      phone: data.phone,
+      description: data.description,
+    })
+    .eq("id", currentUser.office_id)
+    .eq("owner_id", user.id);
+
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath("/office");
+  return { error: null };
+}
+
 export async function inviteLawyerToOffice(
   officeId: string,
   lawyerEmail: string,
