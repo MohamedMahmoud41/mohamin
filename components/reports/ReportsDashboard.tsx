@@ -247,7 +247,7 @@ export default function ReportsDashboard({
                 </div>
                 <div className="w-full flex flex-col justify-end gap-0.5 h-36 relative">
                   <div
-                    className="w-full rounded-t bg-gradient-to-b from-primary to-accent transition-all"
+                    className="w-full rounded-t bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 transition-all"
                     style={{ height: `${heightPct}%` }}
                     title={`إجمالي: ${m.count}`}
                   />
@@ -310,7 +310,7 @@ export default function ReportsDashboard({
                 key={lawyer.id}
                 className="flex items-center gap-4 p-3 rounded-lg hover:bg-beige-light transition"
               >
-                <div className="w-8 h-8 bg-gradient-to-b from-primary to-accent rounded-full flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-8 h-8 bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   {idx + 1}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -333,7 +333,7 @@ export default function ReportsDashboard({
 
       {/* Lawyers count footer */}
       <div className="bg-surface border border-border rounded-xl p-5 flex items-center gap-4">
-        <div className="w-10 h-10 bg-gradient-to-b from-primary to-accent rounded-xl flex items-center justify-center text-white">
+        <div className="w-10 h-10 bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-xl flex items-center justify-center text-white">
           <Users className="w-5 h-5" />
         </div>
         <div>

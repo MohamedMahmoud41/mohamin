@@ -46,7 +46,7 @@ function PostCard({
     <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-b from-primary to-accent rounded-full flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-10 h-10 bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-full flex items-center justify-center text-white font-bold text-sm">
             {(post.postOfficeName || "م")[0]}
           </div>
           <div>

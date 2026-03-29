@@ -52,7 +52,7 @@ export default function ProfileForm({ user }: { user: User }) {
               className="w-20 h-20 rounded-full object-cover"
             />
           ) : (
-            <div className="w-20 h-20 bg-gradient-to-b from-primary to-accent rounded-full flex items-center justify-center text-white font-bold text-2xl">
+            <div className="w-20 h-20 bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-full flex items-center justify-center text-white font-bold text-2xl">
               {initials}
             </div>
           )}

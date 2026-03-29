@@ -92,7 +92,7 @@ export default function NotificationsForm({
     <div dir="rtl" className="max-w-2xl">
       <div className="bg-surface border border-border rounded-xl p-6 space-y-2">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-b from-primary to-accent rounded-xl flex items-center justify-center text-white">
+          <div className="w-10 h-10 bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-xl flex items-center justify-center text-white">
             <Bell className="w-5 h-5" />
           </div>
           <div>

@@ -24,7 +24,11 @@ export async function adminCreateCourt(data: {
     .select()
     .single();
   revalidatePath("/admin/courts");
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.code === "23505")
+      return { error: "اسم المحكمة مستخدم بالفعل، يرجى اختيار اسم مختلف" };
+    return { error: error.message };
+  }
   return { error: null, court: mapCourt(row) };
 }
 
@@ -35,6 +39,8 @@ export async function adminUpdateCourt(
   const supabase = await createClient();
   const { error } = await supabase.from("courts").update(data).eq("id", id);
   revalidatePath("/admin/courts");
+  if (error?.code === "23505")
+    return { error: "اسم المحكمة مستخدم بالفعل، يرجى اختيار اسم مختلف" };
   return { error: error?.message ?? null };
 }
 

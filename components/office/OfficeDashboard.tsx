@@ -372,7 +372,7 @@ export default function OfficeDashboard({
       )}
 
       {/* Office Header */}
-      <div className="bg-gradient-to-b from-primary to-accent rounded-2xl p-8 text-white">
+      <div className="bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-2xl p-8 text-white">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">{office.name}</h1>
@@ -576,7 +576,7 @@ export default function OfficeDashboard({
                         className="w-14 h-14 rounded-full object-cover border border-border"
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-b from-primary to-accent flex items-center justify-center text-white text-xl font-bold">
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 flex items-center justify-center text-white text-xl font-bold">
                         {l.firstName?.[0] || "م"}
                       </div>
                     )}

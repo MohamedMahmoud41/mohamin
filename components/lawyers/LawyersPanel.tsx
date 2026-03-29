@@ -48,7 +48,7 @@ function StatCard({
 }) {
   return (
     <div className="bg-surface border border-border rounded-xl p-5 flex items-center gap-4">
-      <div className="w-12 h-12 bg-gradient-to-b from-primary to-accent rounded-xl flex items-center justify-center text-white">
+      <div className="w-12 h-12 bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-xl flex items-center justify-center text-white">
         <Icon className="w-5 h-5" />
       </div>
       <div>
@@ -380,7 +380,7 @@ export default function LawyersPanel({
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-gradient-to-b from-primary to-accent rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-12 h-12 bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-full flex items-center justify-center text-white font-bold text-sm">
                       {initials}
                     </div>
                   )}

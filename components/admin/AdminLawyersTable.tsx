@@ -415,7 +415,7 @@ export default function AdminLawyersTable({
                           className="w-9 h-9 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-b from-primary to-accent text-white flex items-center justify-center text-sm font-bold">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 text-white flex items-center justify-center text-sm font-bold">
                           {initials}
                         </div>
                       )}

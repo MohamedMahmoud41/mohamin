@@ -804,7 +804,7 @@ export default function AdminUsersTable({
                   {/* Name */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-b from-primary to-accent text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
                         {user.profileImageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
