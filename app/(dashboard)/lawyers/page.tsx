@@ -20,7 +20,7 @@ export default async function AllLawyersPage() {
 
   if (!currentUser.officeId) {
     return (
-      <div dir="rtl" className="w-full bg-background p-8">
+      <div dir="rtl" className="w-full bg-background p-4 md:p-8">
         <div className="text-center py-20 text-text-muted">
           <p className="text-lg mb-4">
             يجب أن تكون عضواً في مكتب لعرض المحامين

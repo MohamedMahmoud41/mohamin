@@ -364,7 +364,10 @@ export default function OfficeDashboard({
   const completedMissions = localMissions.filter((m) => m.isCompleted);
 
   return (
-    <div dir="rtl" className="w-full bg-background p-8 space-y-8">
+    <div
+      dir="rtl"
+      className="w-full bg-background p-4 md:p-8 space-y-6 md:space-y-8"
+    >
       {showAddMission && (
         <AddMissionModal
           onClose={() => setShowAddMission(false)}
@@ -378,10 +381,12 @@ export default function OfficeDashboard({
       )}
 
       {/* Office Header */}
-      <div className="bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-2xl p-8 text-white">
-        <div className="flex items-start justify-between">
+      <div className="bg-gradient-to-b from-accent/70 via-accent/50 to-accent/30 rounded-2xl p-5 md:p-8 text-white">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{office.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">
+              {office.name}
+            </h1>
             <p className="text-white/80 text-sm max-w-xl">
               {office.description || "مكتب محاماة متخصص"}
             </p>
@@ -425,7 +430,7 @@ export default function OfficeDashboard({
       </div>
 
       {/* Main 2+1 grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Recent Cases */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">

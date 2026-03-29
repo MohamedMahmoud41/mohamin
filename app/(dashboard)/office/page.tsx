@@ -27,7 +27,7 @@ export default async function OfficePage() {
     return (
       <div
         dir="rtl"
-        className="min-h-screen bg-background flex flex-col items-center justify-center gap-6 p-8"
+        className="min-h-screen bg-background flex flex-col items-center justify-center gap-6 p-4 md:p-8"
       >
         <h1 className="text-2xl font-bold text-text-primary">
           لم يتم إعداد المكتب بعد
@@ -58,7 +58,7 @@ export default async function OfficePage() {
 
   if (!office) {
     return (
-      <div dir="rtl" className="p-8 text-text-muted text-center">
+      <div dir="rtl" className="p-4 md:p-8 text-text-muted text-center">
         لم يتم العثور على المكتب
       </div>
     );

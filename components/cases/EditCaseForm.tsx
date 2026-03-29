@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -38,7 +38,7 @@ import {
   type EditCaseFormValues,
 } from "@/lib/validations/cases";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface EditCaseFormProps {
   caseItem: Case;
@@ -50,7 +50,7 @@ interface EditCaseFormProps {
   currentUser: UserType;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return "";
@@ -65,7 +65,7 @@ function formatDateTime(dateStr: string | null | undefined) {
   if (!dateStr) return "";
   try {
     const d = new Date(dateStr);
-    return `${d.toLocaleDateString("ar-EG")} — ${d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}`;
+    return `${d.toLocaleDateString("ar-EG")} â€” ${d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}`;
   } catch {
     return dateStr;
   }
@@ -82,7 +82,7 @@ function toDatetimeLocal(dateStr: string | null | undefined) {
   }
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
@@ -127,7 +127,7 @@ function FieldLabel({
 const inputClass =
   "p-3 bg-surface border-2 border-border rounded-lg text-text-primary focus:outline-1 focus:outline-primary w-full";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function EditCaseForm({
   caseItem,
@@ -216,7 +216,7 @@ export default function EditCaseForm({
   const [localAttachments] = useState<CaseAttachment[]>(attachments);
   const [isUploading] = useState(false);
 
-  // ─── Handlers ───────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async function handleSave() {
     // Touch all fields to show errors
@@ -226,7 +226,7 @@ export default function EditCaseForm({
     allFields.forEach((f) => formik.setFieldTouched(f, true));
     const errors = await formik.validateForm();
     if (Object.keys(errors).length > 0) {
-      setError("يرجى تصحيح الأخطاء قبل الحفظ");
+      setError("ÙŠØ±Ø¬Ù‰ ØªØµØ­ÙŠØ­ Ø§Ù„Ø£Ø®Ø·Ø§Ø¡ Ù‚Ø¨Ù„ Ø§Ù„Ø­ÙØ¸");
       return;
     }
     formik.handleSubmit();
@@ -237,7 +237,7 @@ export default function EditCaseForm({
     if (!newSession.datetime) return;
     startTransition(async () => {
       if (editingSessionId) {
-        // Inline optimistic update for edit (update via action not shown in old code — just delete+add)
+        // Inline optimistic update for edit (update via action not shown in old code â€” just delete+add)
         const sessionData = {
           sessionDate: newSession.datetime,
           notes: newSession.notes,
@@ -302,7 +302,7 @@ export default function EditCaseForm({
     if (!newNote.trim()) return;
     startTransition(async () => {
       if (editingNoteId) {
-        // Re-add as new note (old approach) — just update optimistically
+        // Re-add as new note (old approach) â€” just update optimistically
         const noteData = {
           notes: newNote,
           noteOwner: `${currentUser.firstName} ${currentUser.lastName}`,
@@ -362,7 +362,7 @@ export default function EditCaseForm({
     });
   }
 
-  // ─── Court suggestions ───────────────────────────────────────────────────────
+  // â”€â”€â”€ Court suggestions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const courtMatches = courts.filter((c) =>
     c.name
@@ -370,7 +370,7 @@ export default function EditCaseForm({
       .includes((formik.values.courtName || "").toLowerCase()),
   );
 
-  // ─── Sessions display ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Sessions display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const now = new Date();
   const sortedSessions = [...localSessions].sort(
@@ -385,11 +385,11 @@ export default function EditCaseForm({
     .reverse();
   const displaySessions = [...upcomingSessions, ...pastSessions];
 
-  // Owner check — if the case is a private case of this user, they can't reassign it
+  // Owner check â€” if the case is a private case of this user, they can't reassign it
   const isOwner = currentUser.role.includes("officeOwner");
   const isPrivateCase = currentUser.privateCasesIds?.includes(caseItem.id);
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   return (
     <div dir="rtl" className="min-h-screen bg-background p-6">
@@ -404,7 +404,7 @@ export default function EditCaseForm({
           </Link>
           <div>
             <h1 className="text-text-primary text-2xl font-bold">
-              تعديل القضية
+              ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ù‚Ø¶ÙŠØ©
             </h1>
             <p className="text-text-muted text-sm">
               #{caseItem.id.substring(0, 8)}
@@ -417,7 +417,7 @@ export default function EditCaseForm({
             className="flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-lg text-text-primary hover:bg-beige-light transition font-semibold"
           >
             <X className="w-4 h-4" />
-            إلغاء
+            Ø¥Ù„ØºØ§Ø¡
           </Link>
           <button
             onClick={handleSave}
@@ -425,7 +425,7 @@ export default function EditCaseForm({
             className="flex items-center gap-2 px-6 py-2 bg-primary text-background rounded-lg hover:bg-primary-dark transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
-            {isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
+            {isPending ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø­ÙØ¸..." : "Ø­ÙØ¸ Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª"}
           </button>
         </div>
       </div>
@@ -442,10 +442,10 @@ export default function EditCaseForm({
         <div className="col-span-2 flex flex-col gap-6">
           {/* Basic Info */}
           <SectionCard>
-            <SectionHeader icon={Scale} title="معلومات القضية" />
+            <SectionHeader icon={Scale} title="Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù‚Ø¶ÙŠØ©" />
             <div className="flex flex-col gap-4">
               <div>
-                <FieldLabel required>عنوان القضية</FieldLabel>
+                <FieldLabel required>Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ù‚Ø¶ÙŠØ©</FieldLabel>
                 <input
                   name="caseTitle"
                   className={inputClass}
@@ -460,16 +460,16 @@ export default function EditCaseForm({
                 )}
               </div>
               <div>
-                <FieldLabel>رقم القضية</FieldLabel>
+                <FieldLabel>Ø±Ù‚Ù… Ø§Ù„Ù‚Ø¶ÙŠØ©</FieldLabel>
                 <input
                   className={`${inputClass} opacity-60 cursor-not-allowed`}
                   value={caseItem.id.substring(0, 8)}
                   readOnly
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel>نوع القضية</FieldLabel>
+                  <FieldLabel>Ù†ÙˆØ¹ Ø§Ù„Ù‚Ø¶ÙŠØ©</FieldLabel>
                   <select
                     name="caseType"
                     className={inputClass}
@@ -477,15 +477,15 @@ export default function EditCaseForm({
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                   >
-                    <option value="">اختر نوع القضية</option>
+                    <option value="">Ø§Ø®ØªØ± Ù†ÙˆØ¹ Ø§Ù„Ù‚Ø¶ÙŠØ©</option>
                     {[
-                      "مدني",
-                      "جنائي",
-                      "تجاري",
-                      "إداري",
-                      "أسرة",
-                      "عمالي",
-                      "أخرى",
+                      "Ù…Ø¯Ù†ÙŠ",
+                      "Ø¬Ù†Ø§Ø¦ÙŠ",
+                      "ØªØ¬Ø§Ø±ÙŠ",
+                      "Ø¥Ø¯Ø§Ø±ÙŠ",
+                      "Ø£Ø³Ø±Ø©",
+                      "Ø¹Ù…Ø§Ù„ÙŠ",
+                      "Ø£Ø®Ø±Ù‰",
                     ].map((t) => (
                       <option key={t} value={t}>
                         {t}
@@ -494,7 +494,7 @@ export default function EditCaseForm({
                   </select>
                 </div>
                 <div>
-                  <FieldLabel>حالة القضية</FieldLabel>
+                  <FieldLabel>Ø­Ø§Ù„Ø© Ø§Ù„Ù‚Ø¶ÙŠØ©</FieldLabel>
                   <select
                     name="caseStatus"
                     className={inputClass}
@@ -502,16 +502,16 @@ export default function EditCaseForm({
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                   >
-                    <option value="">اختر الحالة</option>
-                    <option value="نشطة">نشطة</option>
-                    <option value="قيد الانتظار">قيد الانتظار</option>
-                    <option value="مكتملة">مكتملة</option>
-                    <option value="closed">مغلقة</option>
+                    <option value="">Ø§Ø®ØªØ± Ø§Ù„Ø­Ø§Ù„Ø©</option>
+                    <option value="Ù†Ø´Ø·Ø©">Ù†Ø´Ø·Ø©</option>
+                    <option value="Ù‚ÙŠØ¯ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø±">Ù‚ÙŠØ¯ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø±</option>
+                    <option value="Ù…ÙƒØªÙ…Ù„Ø©">Ù…ÙƒØªÙ…Ù„Ø©</option>
+                    <option value="closed">Ù…ØºÙ„Ù‚Ø©</option>
                   </select>
                 </div>
               </div>
               <div>
-                <FieldLabel>وصف القضية</FieldLabel>
+                <FieldLabel>ÙˆØµÙ Ø§Ù„Ù‚Ø¶ÙŠØ©</FieldLabel>
                 <textarea
                   name="caseDescription"
                   className={`${inputClass} min-h-[100px] resize-y`}
@@ -530,10 +530,10 @@ export default function EditCaseForm({
 
           {/* Client Info */}
           <SectionCard>
-            <SectionHeader icon={User} title="معلومات الموكل" />
+            <SectionHeader icon={User} title="Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…ÙˆÙƒÙ„" />
             <div className="flex flex-col gap-4">
               <div>
-                <FieldLabel required>اسم الموكل</FieldLabel>
+                <FieldLabel required>Ø§Ø³Ù… Ø§Ù„Ù…ÙˆÙƒÙ„</FieldLabel>
                 <input
                   name="clientName"
                   className={inputClass}
@@ -547,9 +547,9 @@ export default function EditCaseForm({
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel>البريد الإلكتروني</FieldLabel>
+                  <FieldLabel>Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ</FieldLabel>
                   <input
                     name="clientEmail"
                     className={inputClass}
@@ -565,7 +565,7 @@ export default function EditCaseForm({
                   )}
                 </div>
                 <div>
-                  <FieldLabel>رقم الهاتف</FieldLabel>
+                  <FieldLabel>Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ</FieldLabel>
                   <input
                     name="clientPhone"
                     className={inputClass}
@@ -582,7 +582,7 @@ export default function EditCaseForm({
                 </div>
               </div>
               <div>
-                <FieldLabel>العنوان</FieldLabel>
+                <FieldLabel>Ø§Ù„Ø¹Ù†ÙˆØ§Ù†</FieldLabel>
                 <input
                   name="clientAddress"
                   className={inputClass}
@@ -598,12 +598,12 @@ export default function EditCaseForm({
           <SectionCard>
             <SectionHeader
               icon={User}
-              title="معلومات الخصم"
+              title="Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø®ØµÙ…"
               color="text-error"
             />
             <div className="flex flex-col gap-4">
               <div>
-                <FieldLabel>اسم الخصم</FieldLabel>
+                <FieldLabel>Ø§Ø³Ù… Ø§Ù„Ø®ØµÙ…</FieldLabel>
                 <input
                   name="opponentName"
                   className={inputClass}
@@ -612,9 +612,9 @@ export default function EditCaseForm({
                   onBlur={formik.handleBlur}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel>البريد الإلكتروني</FieldLabel>
+                  <FieldLabel>Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ</FieldLabel>
                   <input
                     name="opponentEmail"
                     className={inputClass}
@@ -630,7 +630,7 @@ export default function EditCaseForm({
                   )}
                 </div>
                 <div>
-                  <FieldLabel>رقم الهاتف</FieldLabel>
+                  <FieldLabel>Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ</FieldLabel>
                   <input
                     name="opponentPhone"
                     className={inputClass}
@@ -647,7 +647,7 @@ export default function EditCaseForm({
                 </div>
               </div>
               <div>
-                <FieldLabel>العنوان</FieldLabel>
+                <FieldLabel>Ø§Ù„Ø¹Ù†ÙˆØ§Ù†</FieldLabel>
                 <input
                   name="opponentAddress"
                   className={inputClass}
@@ -661,11 +661,11 @@ export default function EditCaseForm({
 
           {/* Court Info */}
           <SectionCard>
-            <SectionHeader icon={Scale} title="معلومات المحكمة" />
+            <SectionHeader icon={Scale} title="Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…Ø­ÙƒÙ…Ø©" />
             <div className="flex flex-col gap-4">
               {/* Court name with autocomplete */}
               <div className="relative">
-                <FieldLabel required>المحكمة</FieldLabel>
+                <FieldLabel required>Ø§Ù„Ù…Ø­ÙƒÙ…Ø©</FieldLabel>
                 <input
                   type="text"
                   name="courtName"
@@ -681,7 +681,7 @@ export default function EditCaseForm({
                     setTimeout(() => setShowCourtSuggestions(false), 200);
                   }}
                   autoComplete="off"
-                  placeholder="اختر محكمة أو اكتب اسم جديد"
+                  placeholder="Ø§Ø®ØªØ± Ù…Ø­ÙƒÙ…Ø© Ø£Ùˆ Ø§ÙƒØªØ¨ Ø§Ø³Ù… Ø¬Ø¯ÙŠØ¯"
                 />
                 {showCourtSuggestions && (
                   <ul className="absolute z-10 w-full bg-surface border border-border mt-1 rounded-lg max-h-60 overflow-auto shadow-lg top-full left-0">
@@ -699,7 +699,7 @@ export default function EditCaseForm({
                     ))}
                     {courtMatches.length === 0 && (
                       <li className="p-3 text-text-muted text-sm">
-                        لا توجد نتائج (سيتم حفظ الاسم الجديد)
+                        Ù„Ø§ ØªÙˆØ¬Ø¯ Ù†ØªØ§Ø¦Ø¬ (Ø³ÙŠØªÙ… Ø­ÙØ¸ Ø§Ù„Ø§Ø³Ù… Ø§Ù„Ø¬Ø¯ÙŠØ¯)
                       </li>
                     )}
                   </ul>
@@ -712,7 +712,7 @@ export default function EditCaseForm({
               </div>
 
               <div>
-                <FieldLabel>القاعة</FieldLabel>
+                <FieldLabel>Ø§Ù„Ù‚Ø§Ø¹Ø©</FieldLabel>
                 <input
                   name="courtHall"
                   className={inputClass}
@@ -722,9 +722,9 @@ export default function EditCaseForm({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel>تاريخ البدء</FieldLabel>
+                  <FieldLabel>ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¨Ø¯Ø¡</FieldLabel>
                   <input
                     type="date"
                     name="startDate"
@@ -735,7 +735,7 @@ export default function EditCaseForm({
                   />
                 </div>
                 <div>
-                  <FieldLabel>الجلسة القادمة</FieldLabel>
+                  <FieldLabel>Ø§Ù„Ø¬Ù„Ø³Ø© Ø§Ù„Ù‚Ø§Ø¯Ù…Ø©</FieldLabel>
                   <input
                     type="datetime-local"
                     name="nextSessionDate"
@@ -757,12 +757,12 @@ export default function EditCaseForm({
           {/* Sessions */}
           <SectionCard>
             <h2 className="text-text-primary text-2xl font-semibold mb-6">
-              تواريخ الجلسات
+              ØªÙˆØ§Ø±ÙŠØ® Ø§Ù„Ø¬Ù„Ø³Ø§Øª
             </h2>
 
             {/* Add/Edit session */}
             <div className="w-full bg-beige-light rounded-lg p-5 border border-border flex flex-col gap-4 mb-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <input
                   type="datetime-local"
                   className={inputClass}
@@ -773,7 +773,7 @@ export default function EditCaseForm({
                 />
                 <input
                   type="text"
-                  placeholder="ملاحظات الجلسة"
+                  placeholder="Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ù„Ø¬Ù„Ø³Ø©"
                   className={inputClass}
                   value={newSession.notes}
                   onChange={(e) =>
@@ -791,7 +791,7 @@ export default function EditCaseForm({
                 ) : (
                   <Plus className="w-5 h-5" />
                 )}
-                {editingSessionId ? "تحديث الجلسة" : "إضافة جلسة"}
+                {editingSessionId ? "ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø¬Ù„Ø³Ø©" : "Ø¥Ø¶Ø§ÙØ© Ø¬Ù„Ø³Ø©"}
               </button>
               {editingSessionId && (
                 <button
@@ -801,7 +801,7 @@ export default function EditCaseForm({
                   }}
                   className="text-text-muted text-sm hover:text-error transition"
                 >
-                  إلغاء التعديل
+                  Ø¥Ù„ØºØ§Ø¡ Ø§Ù„ØªØ¹Ø¯ÙŠÙ„
                 </button>
               )}
             </div>
@@ -830,19 +830,19 @@ export default function EditCaseForm({
                     <span
                       className={`px-4 py-1 rounded-full text-sm font-bold ${!isPast ? "bg-primary-light text-background" : "text-text-muted bg-beige-light border border-border"}`}
                     >
-                      {isPast ? "منتهية" : "قادمة"}
+                      {isPast ? "Ù…Ù†ØªÙ‡ÙŠØ©" : "Ù‚Ø§Ø¯Ù…Ø©"}
                     </span>
                     <button
                       onClick={() => handleEditSession(session)}
                       className="p-2 hover:bg-beige-light rounded-full text-secondary transition"
-                      title="تعديل"
+                      title="ØªØ¹Ø¯ÙŠÙ„"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteSession(session.id)}
                       className="p-2 hover:bg-beige-light rounded-full text-error transition"
-                      title="حذف"
+                      title="Ø­Ø°Ù"
                     >
                       <Trash className="w-4 h-4" />
                     </button>
@@ -852,7 +852,7 @@ export default function EditCaseForm({
             })}
             {displaySessions.length === 0 && (
               <p className="text-text-muted text-center py-4">
-                لا توجد جلسات مسجلة
+                Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¬Ù„Ø³Ø§Øª Ù…Ø³Ø¬Ù„Ø©
               </p>
             )}
           </SectionCard>
@@ -861,12 +861,12 @@ export default function EditCaseForm({
           <SectionCard>
             <SectionHeader
               icon={MessageSquarePlus}
-              title="الملاحظات والتحديثات"
+              title="Ø§Ù„Ù…Ù„Ø§Ø­Ø¸Ø§Øª ÙˆØ§Ù„ØªØ­Ø¯ÙŠØ«Ø§Øª"
               color="text-info"
             />
 
             <textarea
-              placeholder="إضافة ملاحظة أو تحديث جديد..."
+              placeholder="Ø¥Ø¶Ø§ÙØ© Ù…Ù„Ø§Ø­Ø¸Ø© Ø£Ùˆ ØªØ­Ø¯ÙŠØ« Ø¬Ø¯ÙŠØ¯..."
               className={`${inputClass} min-h-[100px] resize-y`}
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
@@ -882,7 +882,7 @@ export default function EditCaseForm({
               ) : (
                 <Plus className="w-5 h-5" />
               )}
-              {editingNoteId ? "تحديث الملاحظة" : "إضافة ملاحظة"}
+              {editingNoteId ? "ØªØ­Ø¯ÙŠØ« Ø§Ù„Ù…Ù„Ø§Ø­Ø¸Ø©" : "Ø¥Ø¶Ø§ÙØ© Ù…Ù„Ø§Ø­Ø¸Ø©"}
             </button>
             {editingNoteId && (
               <button
@@ -892,7 +892,7 @@ export default function EditCaseForm({
                 }}
                 className="w-full text-center mt-2 text-text-muted text-sm hover:text-error transition"
               >
-                إلغاء التعديل
+                Ø¥Ù„ØºØ§Ø¡ Ø§Ù„ØªØ¹Ø¯ÙŠÙ„
               </button>
             )}
 
@@ -947,7 +947,7 @@ export default function EditCaseForm({
                 ))}
               {localNotes.length === 0 && (
                 <p className="text-text-muted text-center py-4">
-                  لا توجد ملاحظات حتى الآن
+                  Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø­ØªÙ‰ Ø§Ù„Ø¢Ù†
                 </p>
               )}
             </div>
@@ -958,10 +958,10 @@ export default function EditCaseForm({
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-text-primary text-xl font-semibold flex items-center gap-2">
                 <Paperclip className="w-5 h-5 text-secondary" />
-                المرفقات
+                Ø§Ù„Ù…Ø±ÙÙ‚Ø§Øª
               </h2>
               <p className="text-text-muted text-sm">
-                رفع المرفقات غير متاح حالياً من هذه الصفحة
+                Ø±ÙØ¹ Ø§Ù„Ù…Ø±ÙÙ‚Ø§Øª ØºÙŠØ± Ù…ØªØ§Ø­ Ø­Ø§Ù„ÙŠØ§Ù‹ Ù…Ù† Ù‡Ø°Ù‡ Ø§Ù„ØµÙØ­Ø©
               </p>
             </div>
 
@@ -994,7 +994,7 @@ export default function EditCaseForm({
               ))}
               {localAttachments.length === 0 && (
                 <p className="text-text-muted text-center py-4">
-                  لا توجد مرفقات حتى الآن
+                  Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ø±ÙÙ‚Ø§Øª Ø­ØªÙ‰ Ø§Ù„Ø¢Ù†
                 </p>
               )}
             </div>
@@ -1003,13 +1003,13 @@ export default function EditCaseForm({
 
         {/* Sidebar */}
         <div className="col-span-1 flex flex-col gap-6">
-          {/* Lawyer assignment — owner only and not private case */}
+          {/* Lawyer assignment â€” owner only and not private case */}
           {isOwner && !isPrivateCase && (
             <SectionCard>
               <h2 className="text-text-primary text-xl font-semibold mb-4">
-                المحامي المسؤول
+                Ø§Ù„Ù…Ø­Ø§Ù…ÙŠ Ø§Ù„Ù…Ø³Ø¤ÙˆÙ„
               </h2>
-              <FieldLabel>اختر المحامي</FieldLabel>
+              <FieldLabel>Ø§Ø®ØªØ± Ø§Ù„Ù…Ø­Ø§Ù…ÙŠ</FieldLabel>
               <select
                 name="lawyerID"
                 className={`${inputClass} mt-2`}
@@ -1029,10 +1029,10 @@ export default function EditCaseForm({
                 }}
               >
                 <option value="" disabled>
-                  اختر المحامي
+                  Ø§Ø®ØªØ± Ø§Ù„Ù…Ø­Ø§Ù…ÙŠ
                 </option>
                 <option value={currentUser.id}>
-                  {currentUser.firstName} {currentUser.lastName} (أنا)
+                  {currentUser.firstName} {currentUser.lastName} (Ø£Ù†Ø§)
                 </option>
                 {lawyers
                   .filter((l) => l.id !== currentUser.id)
@@ -1048,23 +1048,23 @@ export default function EditCaseForm({
           {/* Quick stats */}
           <SectionCard>
             <h2 className="text-text-primary text-xl font-semibold mb-4">
-              إحصائيات سريعة
+              Ø¥Ø­ØµØ§Ø¦ÙŠØ§Øª Ø³Ø±ÙŠØ¹Ø©
             </h2>
             <div className="flex flex-col gap-4">
               <div className="flex justify-between">
-                <span className="text-text-muted text-base">عدد الجلسات</span>
+                <span className="text-text-muted text-base">Ø¹Ø¯Ø¯ Ø§Ù„Ø¬Ù„Ø³Ø§Øª</span>
                 <span className="text-text-primary text-xl font-bold">
                   {localSessions.length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-muted text-base">عدد الملاحظات</span>
+                <span className="text-text-muted text-base">Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ù„Ø§Ø­Ø¸Ø§Øª</span>
                 <span className="text-info text-xl font-bold">
                   {localNotes.length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-muted text-base">عدد المرفقات</span>
+                <span className="text-text-muted text-base">Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ø±ÙÙ‚Ø§Øª</span>
                 <span className="text-warning text-xl font-bold">
                   {localAttachments.length}
                 </span>
@@ -1075,13 +1075,13 @@ export default function EditCaseForm({
           {/* Tips */}
           <SectionCard>
             <h2 className="text-text-primary text-xl font-semibold mb-4">
-              نصائح
+              Ù†ØµØ§Ø¦Ø­
             </h2>
             <ul className="text-text-muted text-sm flex flex-col gap-2">
-              <li>• احرص على تحديث حالة القضية باستمرار</li>
-              <li>• أضف ملاحظات بعد كل جلسة لمتابعة التطورات</li>
-              <li>• تأكد من صحة بيانات الاتصال بالموكل</li>
-              <li>• سجّل مواعيد الجلسات القادمة لتلقي التنبيهات</li>
+              <li>â€¢ Ø§Ø­Ø±Øµ Ø¹Ù„Ù‰ ØªØ­Ø¯ÙŠØ« Ø­Ø§Ù„Ø© Ø§Ù„Ù‚Ø¶ÙŠØ© Ø¨Ø§Ø³ØªÙ…Ø±Ø§Ø±</li>
+              <li>â€¢ Ø£Ø¶Ù Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø¨Ø¹Ø¯ ÙƒÙ„ Ø¬Ù„Ø³Ø© Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ù„ØªØ·ÙˆØ±Ø§Øª</li>
+              <li>â€¢ ØªØ£ÙƒØ¯ Ù…Ù† ØµØ­Ø© Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ù…ÙˆÙƒÙ„</li>
+              <li>â€¢ Ø³Ø¬Ù‘Ù„ Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ø¬Ù„Ø³Ø§Øª Ø§Ù„Ù‚Ø§Ø¯Ù…Ø© Ù„ØªÙ„Ù‚ÙŠ Ø§Ù„ØªÙ†Ø¨ÙŠÙ‡Ø§Øª</li>
             </ul>
           </SectionCard>
 
@@ -1093,14 +1093,14 @@ export default function EditCaseForm({
               className="w-full py-3 bg-primary text-background rounded-lg hover:bg-primary-dark transition font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              {isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
+              {isPending ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø­ÙØ¸..." : "Ø­ÙØ¸ Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª"}
             </button>
             <Link
               href={`/cases/${caseItem.id}`}
               className="w-full py-3 bg-surface border border-border rounded-lg text-text-primary hover:bg-beige-light transition font-semibold flex items-center justify-center gap-2"
             >
               <X className="w-4 h-4" />
-              إلغاء
+              Ø¥Ù„ØºØ§Ø¡
             </Link>
           </div>
         </div>

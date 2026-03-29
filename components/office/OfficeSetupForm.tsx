@@ -148,7 +148,7 @@ export default function OfficeSetupForm() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Office Info Card */}
-          <div className="bg-surface rounded-2xl border border-border p-8 space-y-6">
+          <div className="bg-surface rounded-2xl border border-border p-4 md:p-8 space-y-6">
             <div className="flex items-center gap-3 text-text-secondary">
               <Building2 className="w-6 h-6" />
               <h2 className="text-xl font-bold">معلومات المكتب</h2>
@@ -240,7 +240,7 @@ export default function OfficeSetupForm() {
           </div>
 
           {/* Add Lawyers Card */}
-          <div className="bg-surface rounded-2xl border border-border p-8 space-y-6">
+          <div className="bg-surface rounded-2xl border border-border p-4 md:p-8 space-y-6">
             <div className="flex items-center gap-3 text-text-secondary">
               <Users className="w-6 h-6" />
               <h2 className="text-xl font-bold">إضافة محامين</h2>

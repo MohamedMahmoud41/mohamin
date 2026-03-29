@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Settings,
   LogOut,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,9 +21,11 @@ import type { User } from "@/types";
 interface SidebarProps {
   /** Full user profile passed down from the Server layout. */
   user: User | null;
+  open?: boolean;
+  onClose?: () => void;
 }
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user, open, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   const isOwner = user?.role?.includes("officeOwner");
@@ -43,9 +46,20 @@ export default function Sidebar({ user }: SidebarProps) {
     { label: "الإعدادات", icon: Settings, path: "/settings" },
   ];
 
-  return (
-    <aside className="w-64 bg-surface border-l border-border flex flex-col justify-between overflow-hidden shadow-sm flex-shrink-0">
-      <nav className="flex flex-col gap-2 p-4 pt-3">
+  const sidebar = (
+    <aside className="w-64 bg-surface border-l border-border flex flex-col justify-between overflow-hidden shadow-sm flex-shrink-0 h-full">
+      <div className="flex items-center justify-between p-4 pt-3 lg:hidden border-b border-border">
+        <span className="font-bold text-text-primary">القائمة</span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-beige transition"
+          >
+            <X className="w-5 h-5 text-text-secondary" />
+          </button>
+        )}
+      </div>
+      <nav className="flex flex-col gap-2 p-4 pt-3 flex-1">
         {menu.map((item) => {
           const Icon = item.icon;
           // Exact match for /cases/new so it doesn't highlight under /cases
@@ -58,6 +72,7 @@ export default function Sidebar({ user }: SidebarProps) {
             <Link
               key={item.path}
               href={item.path}
+              onClick={onClose}
               className={`flex items-center gap-3 px-4 py-3 rounded-sm text-sm font-semibold transition-all ${
                 isActive
                   ? "bg-primary text-white shadow-md"
@@ -88,5 +103,23 @@ export default function Sidebar({ user }: SidebarProps) {
         </form>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop: always visible */}
+      <div className="hidden lg:flex flex-shrink-0">{sidebar}</div>
+
+      {/* Mobile: overlay drawer */}
+      {open && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <div className="relative flex">{sidebar}</div>
+        </div>
+      )}
+    </>
   );
 }

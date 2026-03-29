@@ -10,8 +10,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/services/users";
-import Header from "@/components/layout/Header";
-import Sidebar from "@/components/layout/Sidebar";
+import DashboardLayoutClient from "@/components/layout/DashboardLayoutClient";
 
 export default async function DashboardLayout({
   children,
@@ -30,19 +29,5 @@ export default async function DashboardLayout({
   const { data: user } = await getCurrentUser();
 
   // ── Layout ────────────────────────────────────────────────────────────────
-  return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background">
-      {/* Full-width top header */}
-      <Header user={user} />
-
-      {/* Sidebar + page content */}
-      <div className="flex flex-1 min-h-0">
-        {/* Sidebar — appears on the RIGHT in RTL (dir="rtl" on <html>) */}
-        <Sidebar user={user} />
-
-        {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
-      </div>
-    </div>
-  );
+  return <DashboardLayoutClient user={user}>{children}</DashboardLayoutClient>;
 }

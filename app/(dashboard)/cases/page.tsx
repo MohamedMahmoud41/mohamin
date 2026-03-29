@@ -22,7 +22,7 @@ export default async function CasesPage() {
   );
 
   return (
-    <div className="p-8 bg-background min-h-full">
+    <div className="p-4 md:p-8 bg-background min-h-full">
       <CasesFilters cases={cases} />
     </div>
   );

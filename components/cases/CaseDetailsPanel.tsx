@@ -117,12 +117,12 @@ export default function CaseDetailsPanel({
   const isOwner = currentUser.role?.includes("officeOwner");
 
   return (
-    <div className="bg-background min-h-full p-8">
+    <div className="bg-background min-h-full p-4 md:p-8">
       {/* ─── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-6">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center">
-            <Scale className="w-7 h-7 text-white" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
+        <div className="flex items-center gap-4 md:gap-6 flex-wrap">
+          <div className="w-12 h-12 md:w-14 md:h-14 bg-primary rounded-2xl flex items-center justify-center">
+            <Scale className="w-6 h-6 md:w-7 md:h-7 text-white" />
           </div>
           <div>
             <h1 className="text-text-primary text-2xl font-semibold">

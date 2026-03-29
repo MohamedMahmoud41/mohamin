@@ -273,7 +273,10 @@ export default function LawyersPanel({
   ];
 
   return (
-    <div dir="rtl" className="w-full bg-background p-8 space-y-8">
+    <div
+      dir="rtl"
+      className="w-full bg-background p-4 md:p-8 space-y-6 md:space-y-8"
+    >
       {showAddModal && (
         <AddLawyerModal
           onClose={() => setShowAddModal(false)}
@@ -289,9 +292,11 @@ export default function LawyersPanel({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">المحامون</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
+            المحامون
+          </h1>
           <p className="text-text-muted text-sm mt-1">
             قائمة محامي المكتب وإحصائياتهم
           </p>

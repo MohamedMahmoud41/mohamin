@@ -76,9 +76,9 @@ export default function CasesFilters({ cases }: CasesFiltersProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">
+          <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
             إدارة القضايا الخاصة
           </h1>
           <p className="text-text-muted mt-1">عرض وإدارة جميع القضايا الخاصة</p>

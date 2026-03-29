@@ -36,7 +36,7 @@ export default function SettingsLayout({
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-8 border-b border-border pb-2">
+      <div className="flex gap-4 md:gap-8 border-b border-border pb-2 overflow-x-auto">
         {tabs.map((tab) => (
           <Link
             key={tab.id}

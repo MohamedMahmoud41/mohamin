@@ -52,11 +52,11 @@
   }
 
   .page-container {
-    @apply bg-background min-h-screen p-8;
+    @apply bg-background min-h-screen p-4 md:p-8;
   }
 
   .page-title {
-    @apply text-3xl font-bold text-text-primary;
+    @apply text-2xl md:text-3xl font-bold text-text-primary;
   }
 
   .page-subtitle {

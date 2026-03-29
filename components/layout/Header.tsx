@@ -1,7 +1,15 @@
 "use client";
 
 // CLIENT COMPONENT — uses useState (theme, notifications panel), localStorage, onClick
-import { Settings, Bell, Scale, Moon, Sun, ShieldCheck } from "lucide-react";
+import {
+  Settings,
+  Bell,
+  Scale,
+  Moon,
+  Sun,
+  ShieldCheck,
+  Menu,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,9 +19,11 @@ import type { User } from "@/types";
 interface HeaderProps {
   /** Full user profile fetched server-side in the layout. Null on error. */
   user: User | null;
+  /** Callback to open the sidebar drawer on mobile */
+  onMenuOpen?: () => void;
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, onMenuOpen }: HeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -38,31 +48,43 @@ export default function Header({ user }: HeaderProps) {
   const isAdmin = user?.role?.includes("admin");
 
   return (
-    <nav className="bg-surface px-8 h-16 flex items-center justify-between border-b border-border shadow-sm flex-shrink-0 z-20">
-      {/* Brand */}
-      <div className="flex items-center gap-3 text-primary">
-        <Scale className="w-8 h-8" />
-        <div className="flex flex-col text-right leading-tight">
-          <span className="font-bold text-lg">محامي</span>
-          <span className="text-sm text-text-muted">
-            {isOwner ? "إدارة المكتب" : "إدارة المحامي"}
-          </span>
+    <nav className="bg-surface px-4 md:px-8 h-16 flex items-center justify-between border-b border-border shadow-sm flex-shrink-0 z-20 gap-2">
+      {/* Right side: hamburger + brand */}
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuOpen}
+          className="lg:hidden p-2 rounded-lg hover:bg-beige transition text-text-secondary"
+          aria-label="فتح القائمة"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Brand */}
+        <div className="flex items-center gap-3 text-primary">
+          <Scale className="w-7 h-7 md:w-8 md:h-8" />
+          <div className="hidden sm:flex flex-col text-right leading-tight">
+            <span className="font-bold text-lg">محامي</span>
+            <span className="text-sm text-text-muted">
+              {isOwner ? "إدارة المكتب" : "إدارة المحامي"}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Action bar */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Admin switcher */}
         {isAdmin && (
           <Link
             href="/admin/dashboard"
-            className="flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-2 md:px-3 py-1.5 rounded-lg transition-colors"
           >
             <ShieldCheck size={14} />
-            لوحة الإدارة
+            <span className="hidden sm:inline">لوحة الإدارة</span>
           </Link>
         )}
-        <div className="flex items-center gap-4 text-primary">
+        <div className="flex items-center gap-2 md:gap-4 text-primary">
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
@@ -102,10 +124,10 @@ export default function Header({ user }: HeaderProps) {
         </div>
 
         {/* Vertical divider */}
-        <div className="border-r border-divider h-8 mx-2" />
+        <div className="hidden sm:block border-r border-divider h-8 mx-1 md:mx-2" />
 
         {/* User name + role */}
-        <div className="flex flex-col leading-tight text-right">
+        <div className="hidden sm:flex flex-col leading-tight text-right">
           <span className="font-semibold text-text-primary">
             {user ? `${user.firstName} ${user.lastName}` : "زائر"}
           </span>
@@ -115,7 +137,7 @@ export default function Header({ user }: HeaderProps) {
         </div>
 
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-lg overflow-hidden border border-border flex-shrink-0">
+        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary text-white flex items-center justify-center text-lg overflow-hidden border border-border flex-shrink-0">
           {user?.profileImageUrl ? (
             <Image
               src={user.profileImageUrl}

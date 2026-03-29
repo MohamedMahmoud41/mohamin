@@ -145,10 +145,10 @@ export default function AddCaseForm({
     s <= step ? "bg-primary text-white" : "bg-beige text-primary";
 
   return (
-    <div className="w-full flex flex-col gap-6 p-8 bg-background min-h-screen">
+    <div className="w-full flex flex-col gap-6 p-4 md:p-8 bg-background min-h-screen">
       {/* Page header */}
       <div className="text-right">
-        <h1 className="text-3xl font-bold text-text-primary">
+        <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
           إضافة قضية جديدة
         </h1>
         <p className="text-text-muted mt-2">أدخل معلومات القضية والعميل</p>
@@ -182,7 +182,7 @@ export default function AddCaseForm({
 
       {/* ─── Step 1: Case Info ─────────────────────────────────────────────── */}
       {step === 1 && (
-        <div className="bg-surface p-8 rounded-lg shadow-sm border border-border flex flex-col gap-8">
+        <div className="bg-surface p-4 md:p-8 rounded-lg shadow-sm border border-border flex flex-col gap-6 md:gap-8">
           <div className="text-right">
             <h2 className="text-text-primary text-2xl font-bold">
               معلومات القضية
@@ -214,7 +214,7 @@ export default function AddCaseForm({
           </div>
 
           {/* Type + Status */}
-          <div className="grid grid-cols-2 gap-6 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 text-right">
             <div className="flex flex-col gap-2">
               <label className="text-text-primary font-semibold">
                 نوع القضية *
@@ -284,7 +284,7 @@ export default function AddCaseForm({
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-6 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 text-right">
             <div className="flex flex-col gap-2">
               <label className="text-text-primary font-semibold">
                 تاريخ بدء القضية *
@@ -341,7 +341,7 @@ export default function AddCaseForm({
 
       {/* ─── Step 2: Client Info ───────────────────────────────────────────── */}
       {step === 2 && (
-        <div className="bg-surface p-8 rounded-lg shadow-sm border border-border flex flex-col gap-8">
+        <div className="bg-surface p-4 md:p-8 rounded-lg shadow-sm border border-border flex flex-col gap-6 md:gap-8">
           <div className="text-right">
             <h2 className="text-text-primary text-2xl font-bold">
               معلومات العميل
@@ -351,7 +351,7 @@ export default function AddCaseForm({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <InputField
               label="اسم العميل / الجهة *"
               name="clientName"
@@ -379,7 +379,7 @@ export default function AddCaseForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <InputField
               label="البريد الإلكتروني"
               name="clientEmail"
@@ -423,7 +423,7 @@ export default function AddCaseForm({
 
       {/* ─── Step 3: Opponent Info ─────────────────────────────────────────── */}
       {step === 3 && (
-        <div className="bg-surface p-8 rounded-lg shadow-sm border border-border flex flex-col gap-8">
+        <div className="bg-surface p-4 md:p-8 rounded-lg shadow-sm border border-border flex flex-col gap-6 md:gap-8">
           <div className="text-right">
             <h2 className="text-text-primary text-2xl font-bold">
               معلومات الخصم
@@ -433,7 +433,7 @@ export default function AddCaseForm({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <InputField
               label="اسم الخصم / الجهة *"
               name="opponentName"
@@ -461,7 +461,7 @@ export default function AddCaseForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <InputField
               label="البريد الإلكتروني"
               name="opponentEmail"
@@ -505,7 +505,7 @@ export default function AddCaseForm({
 
       {/* ─── Step 4: Court & Lawyer ────────────────────────────────────────── */}
       {step === 4 && (
-        <div className="bg-surface p-8 rounded-lg shadow-sm border border-border flex flex-col gap-8">
+        <div className="bg-surface p-4 md:p-8 rounded-lg shadow-sm border border-border flex flex-col gap-6 md:gap-8">
           <div className="text-right">
             <h2 className="text-text-primary text-2xl font-bold">
               معلومات المحكمة والتوزيع
@@ -515,7 +515,7 @@ export default function AddCaseForm({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 text-right">
             {/* Court name with autocomplete */}
             <div className="flex flex-col gap-2">
               <label className="text-text-primary font-semibold">

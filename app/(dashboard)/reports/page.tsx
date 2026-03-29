@@ -20,7 +20,7 @@ export default async function ReportsPage() {
 
   if (!currentUser.officeId) {
     return (
-      <div dir="rtl" className="w-full bg-background p-8">
+      <div dir="rtl" className="w-full bg-background p-4 md:p-8">
         <div className="text-center py-20 text-text-muted">
           <p className="text-lg">يجب أن تكون عضواً في مكتب لعرض التقارير</p>
         </div>
