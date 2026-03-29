@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,15 +15,21 @@ import {
   MessageSquarePlus,
   Upload,
   Download,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui";
+import SessionsTimeline from "@/components/cases/SessionsTimeline";
 import {
   deleteCase,
   addCaseNote,
   deleteCaseNote,
-  addCaseSession,
-  deleteCaseSession,
+  uploadCaseAttachment,
+  getCaseFileSignedUrl,
 } from "@/app/actions/cases";
+import { extractStoragePath } from "@/lib/storage";
+import toast from "react-hot-toast";
 import type {
   Case,
   CaseNote,
@@ -91,6 +97,10 @@ export default function CaseDetailsPanel({
   const [activeTab, setActiveTab] = useState<TabId>("details");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [localSessions, setLocalSessions] = useState<CaseSession[]>(sessions);
+  const [localAttachments, setLocalAttachments] =
+    useState<CaseAttachment[]>(attachments);
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
 
   // ─── Delete case ────────────────────────────────────────────────────────────
   const handleDeleteCase = () => {
@@ -174,18 +184,39 @@ export default function CaseDetailsPanel({
       </div>
 
       {/* ─── Tab: Details ───────────────────────────────────────────────────── */}
+      {showSessionsModal && (
+        <SessionsTimeline
+          sessions={localSessions}
+          caseId={caseItem.id}
+          onClose={() => setShowSessionsModal(false)}
+          onSessionsChanged={(updated) => setLocalSessions(updated)}
+        />
+      )}
+
       {activeTab === "details" && (
-        <DetailsTab caseItem={caseItem} sessions={sessions} />
+        <DetailsTab
+          caseItem={caseItem}
+          sessions={localSessions}
+          onOpenSessions={() => setShowSessionsModal(true)}
+        />
       )}
 
-      {/* ─── Tab: Notes ─────────────────────────────────────────────────────── */}
       {activeTab === "notes" && (
-        <NotesTab caseItem={caseItem} notes={notes} currentUser={currentUser} />
+        <NotesTab
+          caseItem={caseItem}
+          notes={notes}
+          currentUser={currentUser}
+          onOpenSessions={() => setShowSessionsModal(true)}
+        />
       )}
 
-      {/* ─── Tab: Documents ─────────────────────────────────────────────────── */}
       {activeTab === "documents" && (
-        <DocumentsTab attachments={attachments} caseItem={caseItem} />
+        <DocumentsTab
+          attachments={localAttachments}
+          caseItem={caseItem}
+          onOpenSessions={() => setShowSessionsModal(true)}
+          onUploaded={(att) => setLocalAttachments((prev) => [...prev, att])}
+        />
       )}
 
       {/* ─── Confirm delete ─────────────────────────────────────────────────── */}
@@ -207,24 +238,24 @@ export default function CaseDetailsPanel({
 function DetailsTab({
   caseItem,
   sessions,
+  onOpenSessions,
 }: {
   caseItem: Case;
   sessions: CaseSession[];
+  onOpenSessions: () => void;
 }) {
   const now = new Date();
-  const upcomingSessions = sessions
-    .filter((s) => new Date(s.sessionDate) > now)
-    .sort(
-      (a, b) =>
-        new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime(),
-    );
-  const pastSessions = sessions
-    .filter((s) => new Date(s.sessionDate) <= now)
-    .sort(
-      (a, b) =>
-        new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime(),
-    );
-  const displayedSessions = [...upcomingSessions, ...pastSessions].slice(0, 3);
+  const sorted = [...sessions].sort(
+    (a, b) =>
+      new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime(),
+  );
+  const displayedSessions = sorted.slice(0, 3);
+
+  function getDisplayStatus(s: CaseSession): "upcoming" | "overdue" | "held" {
+    if (s.status === "held") return "held";
+    if (now > new Date(s.sessionDate)) return "overdue";
+    return "upcoming";
+  }
 
   return (
     <div className="grid grid-cols-3 gap-6">
@@ -254,9 +285,19 @@ function DetailsTab({
             <div className="flex flex-col">
               <span className="text-text-muted text-xs">القاعة</span>
               <span className="text-text-secondary font-semibold">
-                {(caseItem as Case & { courtHall?: string }).courtHall || "—"}
+                {caseItem.courtHall || "—"}
               </span>
             </div>
+            {caseItem.courtNum && (
+              <div className="flex flex-col">
+                <span className="text-text-muted text-xs">
+                  رقم القضية بالمحكمة
+                </span>
+                <span className="text-text-secondary font-semibold">
+                  {caseItem.courtNum}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -267,26 +308,60 @@ function DetailsTab({
           </h2>
           {displayedSessions.length > 0 ? (
             displayedSessions.map((s) => {
-              const isUpcoming = new Date(s.sessionDate) > now;
+              const ds = getDisplayStatus(s);
+              const wrapperClass =
+                ds === "overdue"
+                  ? "border-2 border-error bg-error/5"
+                  : ds === "upcoming"
+                    ? "border-2 border-primary bg-primary/5"
+                    : "border border-border bg-beige opacity-75";
+              const badge = {
+                upcoming: { label: "قادمة", cls: "bg-primary text-white" },
+                overdue: { label: "⚠ متأخرة", cls: "bg-error text-white" },
+                held: { label: "منعقدت", cls: "bg-border text-text-muted" },
+              }[ds];
+              const Icon =
+                ds === "held"
+                  ? CheckCircle2
+                  : ds === "overdue"
+                    ? AlertTriangle
+                    : Clock;
               return (
                 <div
                   key={s.id}
-                  className="border border-border rounded-lg bg-beige p-4 mb-4 flex items-center justify-between"
+                  className={`rounded-xl p-4 mb-3 flex items-center justify-between ${wrapperClass}`}
                 >
-                  <div className="flex flex-col">
-                    <span className="text-text-secondary font-semibold">
-                      {formatDateTime(s.sessionDate)}
-                    </span>
-                    {s.notes && (
-                      <p className="text-text-secondary text-sm mt-1">
-                        {s.notes}
-                      </p>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      className={`w-5 h-5 shrink-0 ${
+                        ds === "overdue"
+                          ? "text-error"
+                          : ds === "upcoming"
+                            ? "text-primary"
+                            : "text-text-muted"
+                      }`}
+                    />
+                    <div className="flex flex-col">
+                      <span
+                        className={`font-semibold text-sm ${
+                          ds === "held"
+                            ? "text-text-muted"
+                            : "text-text-primary"
+                        }`}
+                      >
+                        {formatDateTime(s.sessionDate)}
+                      </span>
+                      {s.notes && (
+                        <p className="text-text-muted text-xs mt-0.5">
+                          {s.notes}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${isUpcoming ? "bg-primary text-white" : "text-text-muted bg-surface border border-border"}`}
+                    className={`px-3 py-1 rounded-full text-xs font-bold ${badge.cls}`}
                   >
-                    {isUpcoming ? "قادمة" : "منتهية"}
+                    {badge.label}
                   </span>
                 </div>
               );
@@ -325,12 +400,61 @@ function DetailsTab({
                 {caseItem.clientEmail || "—"}
               </span>
             </div>
+            {caseItem.clientAddress && (
+              <div className="col-span-2">
+                <span className="text-text-muted text-xs block">العنوان</span>
+                <span className="text-text-primary font-semibold">
+                  {caseItem.clientAddress}
+                </span>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Opponent info */}
+        {(caseItem.opponentEmail || caseItem.opponentAddress) && (
+          <div className="bg-surface rounded-lg border border-border shadow-sm p-6">
+            <h2 className="text-text-primary text-xl font-semibold mb-4">
+              معلومات الخصم
+            </h2>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-text-muted text-xs block">الاسم</span>
+                <span className="text-text-primary font-semibold">
+                  {caseItem.opponentName || "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-text-muted text-xs block">الهاتف</span>
+                <span className="text-text-primary font-semibold">
+                  {caseItem.opponentPhone || "—"}
+                </span>
+              </div>
+              {caseItem.opponentEmail && (
+                <div>
+                  <span className="text-text-muted text-xs block">
+                    البريد الإلكتروني
+                  </span>
+                  <span className="text-text-primary font-semibold">
+                    {caseItem.opponentEmail}
+                  </span>
+                </div>
+              )}
+              {caseItem.opponentAddress && (
+                <div className="col-span-2">
+                  <span className="text-text-muted text-xs block">العنوان</span>
+                  <span className="text-text-primary font-semibold">
+                    {caseItem.opponentAddress}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Sidebar: important dates */}
-      <ImportantDates caseItem={caseItem} />
+      <ImportantDates caseItem={caseItem} onOpenSessions={onOpenSessions} />
     </div>
   );
 }
@@ -341,10 +465,12 @@ function NotesTab({
   caseItem,
   notes,
   currentUser,
+  onOpenSessions,
 }: {
   caseItem: Case;
   notes: CaseNote[];
   currentUser: UserType;
+  onOpenSessions: () => void;
 }) {
   const [noteText, setNoteText] = useState("");
   const [localNotes, setLocalNotes] = useState<CaseNote[]>(notes);
@@ -431,7 +557,7 @@ function NotesTab({
         ))}
       </div>
 
-      <ImportantDates caseItem={caseItem} />
+      <ImportantDates caseItem={caseItem} onOpenSessions={onOpenSessions} />
     </div>
   );
 }
@@ -441,10 +567,50 @@ function NotesTab({
 function DocumentsTab({
   attachments,
   caseItem,
+  onOpenSessions,
+  onUploaded,
 }: {
   attachments: CaseAttachment[];
   caseItem: Case;
+  onOpenSessions: () => void;
+  onUploaded: (att: CaseAttachment) => void;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [openingFileId, setOpeningFileId] = useState<string | null>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    setUploadError(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    const result = await uploadCaseAttachment(caseItem.id, fd);
+    setIsUploading(false);
+    if (result.error) {
+      setUploadError(result.error);
+    } else if (result.data) {
+      onUploaded(result.data);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleOpenFile(doc: CaseAttachment) {
+    if (openingFileId) return;
+    setOpeningFileId(doc.id);
+    const path = extractStoragePath(doc.fileUrl);
+    const { url, error } = await getCaseFileSignedUrl(path);
+    setOpeningFileId(null);
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      console.error("[handleOpenFile] failed for path:", path, error);
+      toast.error("تعذّر فتح الملف، يرجى المحاولة مجدداً");
+    }
+  }
+
   return (
     <div className="grid grid-cols-3 gap-6">
       <div className="col-span-2 bg-surface rounded-lg border border-border shadow-sm p-6">
@@ -452,10 +618,29 @@ function DocumentsTab({
           <h2 className="text-text-primary text-xl font-semibold">
             المستندات المرفقة
           </h2>
-          <p className="text-text-muted text-sm">
-            رفع المستندات متاح من صفحة تعديل القضية
-          </p>
+          <label
+            className={`flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg cursor-pointer hover:bg-primary/90 transition text-sm font-semibold ${
+              isUploading ? "opacity-60 pointer-events-none" : ""
+            }`}
+          >
+            <Upload className="w-4 h-4" />
+            {isUploading ? "جاري الرفع..." : "رفع مستند"}
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+              onChange={handleFileChange}
+              disabled={isUploading}
+            />
+          </label>
         </div>
+
+        {uploadError && (
+          <p className="text-error text-sm bg-error/10 p-3 rounded-lg mb-4">
+            {uploadError}
+          </p>
+        )}
 
         {attachments.length === 0 && (
           <p className="text-center text-text-muted py-8">
@@ -464,53 +649,65 @@ function DocumentsTab({
         )}
 
         <div className="flex flex-col gap-4">
-          {attachments.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex items-center justify-between bg-surface border border-border rounded-lg p-5 hover:shadow-md transition-all"
-            >
-              <div className="flex gap-5">
-                <div className="w-12 h-12 bg-beige rounded-2xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-text-secondary" />
-                </div>
-                <div className="flex flex-col text-right">
-                  <a
-                    href={doc.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-text-primary font-semibold hover:text-primary hover:underline transition-colors"
-                  >
-                    {doc.fileName || "مستند بدون اسم"}
-                  </a>
-                  <span className="text-text-muted text-xs">
-                    {doc.fileSize
-                      ? `${Math.round(doc.fileSize / 1024)} KB • `
-                      : ""}
-                    {formatDateTime(doc.uploadedAt)}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  doc.fileUrl && window.open(doc.fileUrl, "_blank")
-                }
-                className="p-3 text-text-secondary hover:text-text-primary hover:bg-beige rounded-2xl transition"
+          {attachments.map((doc) => {
+            const isLoading = openingFileId === doc.id;
+            return (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between bg-surface border border-border rounded-lg p-5 hover:shadow-md transition-all"
               >
-                <Download className="w-5 h-5" />
-              </button>
-            </div>
-          ))}
+                <button
+                  onClick={() => handleOpenFile(doc)}
+                  disabled={!!openingFileId}
+                  className="flex gap-5 text-right flex-1 min-w-0 disabled:opacity-60"
+                >
+                  <div className="w-12 h-12 bg-beige rounded-2xl flex items-center justify-center shrink-0">
+                    <FileText className="w-6 h-6 text-text-secondary" />
+                  </div>
+                  <div className="flex flex-col text-right min-w-0">
+                    <span className="text-text-primary font-semibold hover:text-primary transition-colors truncate">
+                      {doc.fileName || "مستند بدون اسم"}
+                    </span>
+                    <span className="text-text-muted text-xs">
+                      {doc.fileSize
+                        ? `${Math.round(doc.fileSize / 1024)} KB • `
+                        : ""}
+                      {formatDateTime(doc.uploadedAt)}
+                    </span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => handleOpenFile(doc)}
+                  disabled={!!openingFileId}
+                  className="p-3 text-text-secondary hover:text-text-primary hover:bg-beige rounded-2xl transition disabled:opacity-50 shrink-0"
+                  title="فتح الملف"
+                >
+                  {isLoading ? (
+                    <span className="w-5 h-5 block border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <ImportantDates caseItem={caseItem} />
+      <ImportantDates caseItem={caseItem} onOpenSessions={onOpenSessions} />
     </div>
   );
 }
 
 // ─── Shared: Important Dates sidebar ──────────────────────────────────────────
 
-function ImportantDates({ caseItem }: { caseItem: Case }) {
+function ImportantDates({
+  caseItem,
+  onOpenSessions,
+}: {
+  caseItem: Case;
+  onOpenSessions: () => void;
+}) {
   return (
     <div className="bg-surface rounded-lg border border-border shadow-sm p-6 flex flex-col gap-6 h-max">
       <h2 className="text-text-primary text-xl font-semibold">
@@ -527,7 +724,10 @@ function ImportantDates({ caseItem }: { caseItem: Case }) {
         </div>
       </div>
 
-      <button className="w-full rounded-2xl bg-secondary text-white py-3 text-sm font-semibold">
+      <button
+        onClick={onOpenSessions}
+        className="w-full rounded-2xl bg-secondary text-white py-3 text-sm font-semibold hover:bg-secondary/90 transition"
+      >
         الجلسة القادمة
         <br />
         {formatDateTime(caseItem.nextSessionDate)}

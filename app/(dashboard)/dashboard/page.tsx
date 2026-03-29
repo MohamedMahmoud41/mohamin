@@ -3,10 +3,10 @@ import Link from "next/link";
 import { Scale, Activity, Clock, CircleCheckBig } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/services/users";
-import { getCasesByUser } from "@/services/cases";
+import { getCasesByUser, getUpcomingSessionsForCases } from "@/services/cases";
 import { redirect } from "next/navigation";
 import { StatCard, CaseCard, SessionCard } from "@/components/dashboard";
-import type { Case } from "@/types";
+import type { Case, DashboardSession } from "@/types";
 
 export const metadata: Metadata = { title: "لوحة التحكم" };
 
@@ -72,9 +72,16 @@ export default async function DashboardPage() {
   if (!authUser) redirect("/login");
 
   const { data: user } = await getCurrentUser();
-  const { data: cases = [] } = await getCasesByUser(
+  const { data: casesData } = await getCasesByUser(
     authUser.id,
     user?.officeId ?? null,
+  );
+  const cases: Case[] = casesData ?? [];
+
+  const caseIds = cases.map((c) => c.id);
+  const { data: allUpcomingSessions = [] } = await getUpcomingSessionsForCases(
+    caseIds,
+    cases,
   );
 
   // ─── Stats ────────────────────────────────────────────────────────────────
@@ -144,32 +151,21 @@ export default async function DashboardPage() {
     )
     .slice(0, 3);
 
-  // ─── Upcoming sessions ────────────────────────────────────────────────────
+  // ─── Sessions: overdue first (oldest→newest), then upcoming (nearest first) ──
   const now = new Date();
-  const upcomingSessions = cases
-    .filter((c) => c.nextSessionDate && new Date(c.nextSessionDate) > now)
-    .sort(
+  const sessions: DashboardSession[] = allUpcomingSessions ?? [];
+  const overdueSessions = sessions.filter((s) => now > new Date(s.sessionDate));
+  const futureSessions = sessions.filter((s) => now <= new Date(s.sessionDate));
+  const sortedSessions: DashboardSession[] = [
+    ...overdueSessions.sort(
       (a, b) =>
-        new Date(a.nextSessionDate!).getTime() -
-        new Date(b.nextSessionDate!).getTime(),
-    )
-    .slice(0, 3)
-    .map((c) => ({
-      id: c.id,
-      title: c.caseTitle,
-      reference: c.id.substring(0, 8),
-      date: {
-        day: new Date(c.nextSessionDate!).getDate(),
-        month: new Date(c.nextSessionDate!).toLocaleDateString("ar-EG", {
-          month: "long",
-        }),
-      },
-      time: new Date(c.nextSessionDate!).toLocaleTimeString("ar-EG", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      location: c.courtName || "غير محدد",
-    }));
+        new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime(),
+    ),
+    ...futureSessions.sort(
+      (a, b) =>
+        new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime(),
+    ),
+  ].slice(0, 5);
 
   return (
     <div className="p-8 bg-background min-h-full">
@@ -215,13 +211,22 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Upcoming Sessions */}
+        {/* Sessions */}
         <div>
-          <h2 className="text-xl text-text-primary font-bold mb-6">
-            الجلسات القادمة
-          </h2>
-          {upcomingSessions.length > 0 ? (
-            upcomingSessions.map((s) => <SessionCard key={s.id} {...s} />)
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl text-text-primary font-bold">
+              الجلسات القادمة
+            </h2>
+            {overdueSessions.length > 0 && (
+              <span className="flex items-center gap-1 text-xs text-error font-semibold bg-error/10 px-2.5 py-1 rounded-full">
+                {overdueSessions.length} متأخرة
+              </span>
+            )}
+          </div>
+          {sortedSessions.length > 0 ? (
+            sortedSessions.map((s) => (
+              <SessionCard key={s.sessionId} session={s} />
+            ))
           ) : (
             <p className="text-center text-sm text-text-muted">
               لا توجد جلسات قادمة

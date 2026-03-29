@@ -28,9 +28,9 @@ export default async function CaseDetailsPage({
   const [
     { data: caseItem },
     { data: user },
-    { data: sessions = [] },
-    { data: notes = [] },
-    { data: attachments = [] },
+    { data: sessions },
+    { data: notes },
+    { data: attachments },
   ] = await Promise.all([
     getCaseById(caseId),
     getCurrentUser(),
@@ -38,16 +38,15 @@ export default async function CaseDetailsPage({
     getCaseNotes(caseId),
     getCaseAttachments(caseId),
   ]);
-
   if (!caseItem) notFound();
   if (!user) redirect("/login");
 
   return (
     <CaseDetailsPanel
       caseItem={caseItem}
-      sessions={sessions}
-      notes={notes}
-      attachments={attachments}
+      sessions={sessions ?? []}
+      notes={notes ?? []}
+      attachments={attachments ?? []}
       currentUser={user}
     />
   );

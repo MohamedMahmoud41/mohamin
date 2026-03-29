@@ -74,13 +74,20 @@ export interface Case {
   officeId: string;
   lawyerID: string;
   courtName: string;
+  courtHall?: string;
+  courtNum?: string;
   /** Client info */
   clientName: string;
   clientPhone: string;
   clientEmail: string;
+  clientAddress?: string;
+  clientType?: string;
   /** Opponent info */
   opponentName: string;
   opponentPhone: string;
+  opponentEmail?: string;
+  opponentAddress?: string;
+  opponentType?: string;
   /** Related IDs */
   casesNotes?: CaseNote[];
   caseSessions?: CaseSession[];
@@ -99,10 +106,15 @@ export interface CaseNote {
   createdAt: string;
 }
 
+export type SessionStatus = "upcoming" | "held";
+export type SessionDecision = "adjourned" | "judgment_reserved" | "judged";
+
 export interface CaseSession {
   id: string;
   caseId: string;
   sessionDate: string;
+  status: SessionStatus;
+  decision?: SessionDecision | null;
   notes: string;
   createdAt: string;
 }
@@ -174,4 +186,17 @@ export interface Mission {
 export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
+}
+
+// ─── Dashboard session (enriched, used on dashboard) ─────────────────────────
+
+export interface DashboardSession {
+  sessionId: string;
+  caseId: string;
+  sessionDate: string;
+  /** Raw status from DB – use getSessionDisplayStatus() to derive "overdue" */
+  status: SessionStatus;
+  caseTitle: string;
+  clientName: string;
+  courtName: string;
 }

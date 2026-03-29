@@ -303,7 +303,7 @@ export default function EditCaseForm({
       if (editingNoteId) {
         // Re-add as new note (old approach) — just update optimistically
         const noteData = {
-          noteTitle: "",
+          notes: newNote,
           noteOwner: `${currentUser.firstName} ${currentUser.lastName}`,
         };
         await deleteCaseNote(caseItem.id, editingNoteId);
@@ -326,7 +326,7 @@ export default function EditCaseForm({
         setEditingNoteId(null);
       } else {
         const noteData = {
-          noteTitle: "",
+          notes: newNote,
           noteOwner: `${currentUser.firstName} ${currentUser.lastName}`,
         };
         const result = await addCaseNote(caseItem.id, noteData);

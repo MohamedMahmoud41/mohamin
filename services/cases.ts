@@ -24,6 +24,7 @@ import type {
   CaseNote,
   CaseSession,
   CaseAttachment,
+  DashboardSession,
   ApiResponse,
 } from "@/types";
 
@@ -40,11 +41,18 @@ function mapCase(row: Record<string, any>): Case {
     officeId: row.office_id,
     lawyerID: row.lawyer_id,
     courtName: row.court_name,
+    courtHall: row.court_hall ?? "",
+    courtNum: row.court_num ?? "",
     clientName: row.client_name,
     clientPhone: row.client_phone,
     clientEmail: row.client_email,
+    clientAddress: row.client_address ?? "",
+    clientType: row.client_type ?? "",
     opponentName: row.opponent_name,
     opponentPhone: row.opponent_phone,
+    opponentEmail: row.opponent_email ?? "",
+    opponentAddress: row.opponent_address ?? "",
+    opponentType: row.opponent_type ?? "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -69,6 +77,8 @@ function mapCaseSession(row: Record<string, any>): CaseSession {
     id: row.id,
     caseId: row.case_id,
     sessionDate: row.session_date,
+    status: row.status ?? "upcoming",
+    decision: row.decision ?? null,
     notes: row.notes,
     createdAt: row.created_at,
   };
@@ -188,4 +198,45 @@ export async function getCaseAttachments(
     data: data ? data.map(mapCaseAttachment) : [],
     error: error?.message ?? null,
   };
+}
+
+/**
+ * Fetch upcoming sessions (status="upcoming") for a given set of case IDs,
+ * enriched with case information for dashboard display.
+ */
+export async function getUpcomingSessionsForCases(
+  caseIds: string[],
+  cases: Case[],
+): Promise<ApiResponse<DashboardSession[]>> {
+  if (!caseIds.length) return { data: [], error: null };
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("case_sessions")
+    .select("id, case_id, session_date, status")
+    .in("case_id", caseIds)
+    .eq("status", "upcoming")
+    .order("session_date", { ascending: true });
+
+  if (error) return { data: null, error: error.message };
+
+  const caseMap = new Map(cases.map((c) => [c.id, c]));
+
+  const enriched: DashboardSession[] = (data ?? [])
+    .map((row) => {
+      const c = caseMap.get(row.case_id);
+      if (!c) return null;
+      return {
+        sessionId: row.id,
+        caseId: row.case_id,
+        sessionDate: row.session_date,
+        status: row.status,
+        caseTitle: c.caseTitle,
+        clientName: c.clientName,
+        courtName: c.courtName || "غير محدد",
+      };
+    })
+    .filter(Boolean) as DashboardSession[];
+
+  return { data: enriched, error: null };
 }
