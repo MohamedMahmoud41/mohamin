@@ -10,6 +10,11 @@ import {
   FileText,
   LogOut,
   X,
+  MapPin,
+  BookOpen,
+  Scale,
+  Shield,
+  Tag,
 } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 
@@ -17,7 +22,16 @@ const navItems = [
   { href: "/admin/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
   { href: "/admin/users", label: "المستخدمون", icon: Users },
   { href: "/admin/owners", label: "المكاتب", icon: Building2 },
+  { href: "/admin/governorates", label: "المحافظات", icon: MapPin },
+  { href: "/admin/police-stations", label: "مراكز الشرطة", icon: Shield },
   { href: "/admin/courts", label: "المحاكم", icon: Gavel },
+  {
+    href: "/admin/partial-prosecution",
+    label: "النيابات الجزئية",
+    icon: Scale,
+  },
+  { href: "/admin/court-divisions", label: "أقسام المحاكم", icon: BookOpen },
+  { href: "/admin/case-types", label: "أنواع القضايا", icon: Tag },
   { href: "/admin/posts", label: "المنشورات", icon: FileText },
 ];
 

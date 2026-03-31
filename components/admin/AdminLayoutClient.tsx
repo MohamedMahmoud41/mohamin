@@ -53,7 +53,7 @@ export default function AdminLayoutClient({
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">{children}</main>
+        <main className="flex-1 overflow-auto px-4 md:px-8">{children}</main>
       </div>
     </div>
   );

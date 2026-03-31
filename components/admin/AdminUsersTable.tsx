@@ -667,7 +667,7 @@ export default function AdminUsersTable({
   }
 
   return (
-    <div dir="rtl" className="space-y-6">
+    <div dir="rtl" className="space-y-3">
       {modal === "add" && (
         <AddUserModal
           onClose={() => setModal(null)}

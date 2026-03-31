@@ -147,11 +147,61 @@ export interface Lawyer {
 
 // ─── Court ───────────────────────────────────────────────────────────────────
 
+export type CourtDegree = "appeal" | "primary" | "partial" | "full" | "family";
+export type CaseCategory = "civil" | "criminal" | "personal";
+
+export interface Governorate {
+  id: string;
+  name: string;
+  code?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Court {
   id: string;
   name: string;
-  city: string;
+  governorateId: string | null;
+  courtDegree: CourtDegree | null;
+  address: string;
+  locationUrl: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourtDivision {
+  id: string;
+  name: string;
+  category: CaseCategory;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartialProsecution {
+  id: string;
+  name: string;
+  courtId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PoliceStation {
+  id: string;
+  name: string;
+  governorateId: string | null;
+  address: string;
+  locationUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CaseType {
+  id: string;
+  name: string;
+  category: CaseCategory;
+  courtIds: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Post ────────────────────────────────────────────────────────────────────

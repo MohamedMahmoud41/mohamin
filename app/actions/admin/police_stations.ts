@@ -3,81 +3,79 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeName } from "@/lib/enums";
-import type { Court, CourtDegree } from "@/types";
+import type { PoliceStation } from "@/types";
 
-function mapCourt(row: Record<string, unknown>): Court {
+function mapStation(row: Record<string, unknown>): PoliceStation {
   return {
     id: row.id as string,
     name: row.name as string,
     governorateId: (row.governorate_id as string | null) ?? null,
-    courtDegree: (row.court_degree as CourtDegree | null) ?? null,
     address: (row.address as string) ?? "",
-    locationUrl: (row.location_url as string) ?? "",
+    locationUrl: (row.location_url as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
 }
 
-export async function adminCreateCourt(data: {
+export async function adminCreatePoliceStation(data: {
   name: string;
   governorateId?: string | null;
-  courtDegree?: CourtDegree | null;
   address?: string;
-  locationUrl?: string;
-}): Promise<{ error: string | null; court?: Court }> {
+  locationUrl?: string | null;
+}): Promise<{ error: string | null; station?: PoliceStation }> {
   const supabase = await createClient();
   const { data: row, error } = await supabase
-    .from("courts")
+    .from("police_stations")
     .insert({
       name: normalizeName(data.name),
       governorate_id: data.governorateId || null,
-      court_degree: data.courtDegree || null,
       address: data.address?.trim() ?? "",
-      location_url: data.locationUrl?.trim() ?? "",
+      location_url: data.locationUrl?.trim() || null,
     })
     .select()
     .single();
-  revalidatePath("/admin/courts");
+  revalidatePath("/admin/police-stations");
   if (error) {
     if (error.code === "23505")
-      return { error: "اسم المحكمة مستخدم بالفعل، يرجى اختيار اسم مختلف" };
+      return { error: "هذا المركز مسجل بالفعل، يرجى اختيار اسم مختلف" };
     return { error: error.message };
   }
-  return { error: null, court: mapCourt(row) };
+  return { error: null, station: mapStation(row) };
 }
 
-export async function adminUpdateCourt(
+export async function adminUpdatePoliceStation(
   id: string,
   data: {
     name: string;
     governorateId?: string | null;
-    courtDegree?: CourtDegree | null;
     address?: string;
-    locationUrl?: string;
+    locationUrl?: string | null;
   },
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
   const { error } = await supabase
-    .from("courts")
+    .from("police_stations")
     .update({
       name: normalizeName(data.name),
       governorate_id: data.governorateId || null,
-      court_degree: data.courtDegree || null,
       address: data.address?.trim() ?? "",
-      location_url: data.locationUrl?.trim() ?? "",
+      location_url: data.locationUrl?.trim() || null,
     })
     .eq("id", id);
-  revalidatePath("/admin/courts");
+  revalidatePath("/admin/police-stations");
   if (error?.code === "23505")
-    return { error: "اسم المحكمة مستخدم بالفعل، يرجى اختيار اسم مختلف" };
+    return { error: "هذا المركز مسجل بالفعل، يرجى اختيار اسم مختلف" };
   return { error: error?.message ?? null };
 }
 
-export async function adminDeleteCourt(
+export async function adminDeletePoliceStation(
   id: string,
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
-  const { error } = await supabase.from("courts").delete().eq("id", id);
-  revalidatePath("/admin/courts");
+  const { error } = await supabase
+    .from("police_stations")
+    .delete()
+    .eq("id", id);
+  revalidatePath("/admin/police-stations");
   return { error: error?.message ?? null };
 }

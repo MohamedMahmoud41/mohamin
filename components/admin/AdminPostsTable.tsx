@@ -101,7 +101,7 @@ export default function AdminPostsTable({
   }
 
   return (
-    <div dir="rtl" className="space-y-6">
+    <div dir="rtl" className="space-y-3">
       {selected && (
         <DeleteModal
           title={selected.postTitle}

@@ -473,7 +473,7 @@ export default function AdminOfficesTable({
   }
 
   return (
-    <div dir="rtl" className="space-y-6">
+    <div dir="rtl" className="space-y-3">
       {modal === "add" && (
         <AddOfficeModal
           onClose={() => setModal(null)}

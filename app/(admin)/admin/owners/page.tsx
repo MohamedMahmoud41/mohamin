@@ -10,7 +10,7 @@ export default async function AdminOwnersPage() {
     adminGetOfficeEligibleUsers(),
   ]);
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 md:px-8 py-2">
       <AdminOfficesTable
         initialOffices={offices ?? []}
         eligibleOwners={owners}

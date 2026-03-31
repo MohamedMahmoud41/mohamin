@@ -6,7 +6,7 @@ export const metadata = { title: "إدارة المنشورات" };
 export default async function AdminPostsPage() {
   const { data: posts } = await getAllPosts();
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 md:px-8 py-2">
       <AdminPostsTable initialPosts={posts ?? []} />
     </div>
   );
