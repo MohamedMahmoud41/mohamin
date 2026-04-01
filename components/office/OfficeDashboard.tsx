@@ -31,7 +31,14 @@ const ACTIVE_STATUSES = [
   "جارية",
   "جاري",
 ];
-const SUCCESS_STATUSES = ["completed", "مكتملة", "won", "مكسوبة", "مكسوبه"];
+const SUCCESS_STATUSES = [
+  "completed",
+  "مكتملة",
+  "won",
+  "مكسوبة",
+  "مكسوبه",
+  "منتهية لصالح الموكل",
+];
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return "";

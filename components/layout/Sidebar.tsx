@@ -12,6 +12,8 @@ import {
   Settings,
   LogOut,
   X,
+  Building,
+  UserCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,6 +37,8 @@ export default function Sidebar({ user, open, onClose }: SidebarProps) {
     { label: "لوحة التحكم", icon: LayoutGrid, path: "/dashboard" },
     { label: "القضايا", icon: Scale, path: "/cases" },
     { label: "إضافة قضية", icon: PlusCircle, path: "/cases/new" },
+    { label: "العملاء", icon: UserCheck, path: "/clients" },
+    { label: "المحاكم", icon: Building, path: "/courts" },
     ...(isOwner ? [{ label: "المحامون", icon: Users, path: "/lawyers" }] : []),
     ...(hasOffice
       ? [{ label: "المكتب", icon: Building2, path: "/office" }]

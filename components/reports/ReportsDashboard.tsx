@@ -15,7 +15,14 @@ const ACTIVE_STATUSES = [
   "جارية",
   "جاري",
 ];
-const SUCCESS_STATUSES = ["completed", "مكتملة", "won", "مكسوبة", "مكسوبه"];
+const SUCCESS_STATUSES = [
+  "completed",
+  "مكتملة",
+  "won",
+  "مكسوبة",
+  "مكسوبه",
+  "منتهية لصالح الموكل",
+];
 
 function normalizeStatus(s: string): "active" | "success" | "other" {
   const low = (s ?? "").toLowerCase();

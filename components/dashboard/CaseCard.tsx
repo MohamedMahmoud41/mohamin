@@ -25,7 +25,16 @@ function getStatusVariant(status: string): BadgeVariant {
     return "info";
   if (["قيد الانتظار", "قيد الإنتظار", "انتظار", "pending"].includes(s))
     return "warning";
-  if (["مكسوبة", "مكسوبه", "completed", "won", "مكتملة"].includes(s))
+  if (
+    [
+      "مكسوبة",
+      "مكسوبه",
+      "completed",
+      "won",
+      "مكتملة",
+      "منتهية لصالح الموكل",
+    ].includes(s)
+  )
     return "success";
   if (["مغلقة", "closed"].includes(s)) return "secondary";
   return "default";

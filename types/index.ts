@@ -54,6 +54,21 @@ export interface Office {
   createdAt: string;
 }
 
+// ─── Client ──────────────────────────────────────────────────────────────────
+
+export interface Client {
+  id: string;
+  officeId: string;
+  name: string;
+  type: "individual" | "company";
+  nationalId: string;
+  phone: string;
+  email: string;
+  address: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Case ────────────────────────────────────────────────────────────────────
 
 export type CaseStatus =
@@ -63,9 +78,15 @@ export type CaseStatus =
   | "closed"
   | "unknown";
 
+export interface CaseNumber {
+  caseNumber: string;
+  caseYear: string;
+}
+
 export interface Case {
   id: string;
   caseTitle: string;
+  caseCategory: CaseCategory;
   caseType: string;
   caseStatus: string; // raw string from DB — use normalizeStatus() to normalize
   caseDescription: string;
@@ -73,7 +94,28 @@ export interface Case {
   nextSessionDate: string | null;
   officeId: string;
   lawyerID: string;
+  /** All assigned lawyer IDs (from case_lawyers junction table) */
+  lawyerIDs: string[];
+  /** Reference to clients table */
+  clientId?: string;
+  /** Composite case numbers (max 5) */
+  caseNumbers: CaseNumber[];
+  /** Civil-specific fields */
+  civilDegree?: string;
+  courtId?: string;
   courtName: string;
+  caseTypeId?: string;
+  /** Criminal-specific fields */
+  courtDivisionId?: string;
+  governorateId?: string;
+  policeStationId?: string;
+  partialProsecutionId?: string;
+  /** Personal-specific fields */
+  personalServiceTypeId?: string;
+  personalCourtDivisionId?: string;
+  familyCourtId?: string;
+  personalPartialProsecutionId?: string;
+  /** Deprecated — kept for backward compat */
   courtHall?: string;
   courtNum?: string;
   /** Client info */
@@ -82,12 +124,16 @@ export interface Case {
   clientEmail: string;
   clientAddress?: string;
   clientType?: string;
+  clientNationalId?: string;
+  clientRole?: string;
   /** Opponent info */
   opponentName: string;
   opponentPhone: string;
   opponentEmail?: string;
   opponentAddress?: string;
   opponentType?: string;
+  opponentNationalId?: string;
+  opponentRole?: string;
   /** Related IDs */
   casesNotes?: CaseNote[];
   caseSessions?: CaseSession[];
@@ -249,4 +295,12 @@ export interface DashboardSession {
   caseTitle: string;
   clientName: string;
   courtName: string;
+}
+
+// ─── Case-Lawyer junction (from case_lawyers table) ─────────────────────────
+
+export interface CaseLawyer {
+  caseId: string;
+  lawyerId: string;
+  assignedAt: string;
 }

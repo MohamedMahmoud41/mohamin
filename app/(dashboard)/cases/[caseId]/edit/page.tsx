@@ -9,7 +9,13 @@ import {
   getCaseAttachments,
 } from "@/services/cases";
 import { getCourts } from "@/services/courts";
+import { getCaseTypes } from "@/services/case_types";
+import { getCourtDivisions } from "@/services/court_divisions";
+import { getGovernorates } from "@/services/governorates";
+import { getPoliceStations } from "@/services/police_stations";
+import { getPartialProsecutions } from "@/services/partial_prosecution";
 import { getLawyersByOffice } from "@/services/lawyers";
+import { getClientsByOffice } from "@/services/clients";
 import EditCaseForm from "@/components/cases/EditCaseForm";
 
 export const metadata: Metadata = { title: "تعديل القضية" };
@@ -33,7 +39,12 @@ export default async function EditCasePage({
     { data: sessions = [] },
     { data: notes = [] },
     { data: attachments = [] },
-    { data: courts = [] },
+    { data: allCourts = [] },
+    { data: allCaseTypes = [] },
+    { data: allCourtDivisions = [] },
+    { data: allGovernorates = [] },
+    { data: allPoliceStations = [] },
+    { data: allPartialProsecutions = [] },
   ] = await Promise.all([
     getCaseById(caseId),
     getCurrentUser(),
@@ -41,6 +52,11 @@ export default async function EditCasePage({
     getCaseNotes(caseId),
     getCaseAttachments(caseId),
     getCourts(),
+    getCaseTypes(),
+    getCourtDivisions(),
+    getGovernorates(),
+    getPoliceStations(),
+    getPartialProsecutions(),
   ]);
 
   if (!caseItem) notFound();
@@ -50,15 +66,25 @@ export default async function EditCasePage({
     ? await getLawyersByOffice(user.officeId)
     : { data: [] };
 
+  const { data: clients = [] } = user.officeId
+    ? await getClientsByOffice(user.officeId)
+    : { data: [] };
+
   return (
     <EditCaseForm
       caseItem={caseItem}
       sessions={sessions ?? []}
       notes={notes ?? []}
       attachments={attachments ?? []}
-      courts={courts ?? []}
+      allCourts={allCourts ?? []}
+      allCaseTypes={allCaseTypes ?? []}
+      allCourtDivisions={allCourtDivisions ?? []}
+      allGovernorates={allGovernorates ?? []}
+      allPoliceStations={allPoliceStations ?? []}
+      allPartialProsecutions={allPartialProsecutions ?? []}
       lawyers={lawyers ?? []}
       currentUser={user}
+      clients={clients ?? []}
     />
   );
 }

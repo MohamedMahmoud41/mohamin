@@ -16,7 +16,16 @@ function normalizeStatus(status: string) {
     return "active";
   if (["قيد الانتظار", "pending", "انتظار", "قيد الإنتظار"].includes(s))
     return "pending";
-  if (["مكتملة", "completed", "won", "مكسوبة", "مكسوبه"].includes(s))
+  if (
+    [
+      "مكتملة",
+      "completed",
+      "won",
+      "مكسوبة",
+      "مكسوبه",
+      "منتهية لصالح الموكل",
+    ].includes(s)
+  )
     return "completed";
   if (["closed", "مغلقة", "مرفوضة", "خسرت"].includes(s)) return "closed";
   return "unknown";

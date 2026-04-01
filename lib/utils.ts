@@ -93,7 +93,16 @@ export function normalizeStatus(status: string | undefined): NormalizedStatus {
   if (["قيد الانتظار", "pending", "انتظار", "قيد الإنتظار"].includes(value))
     return "pending";
 
-  if (["مكتملة", "completed", "won", "مكسوبة", "مكسوبه"].includes(value))
+  if (
+    [
+      "مكتملة",
+      "completed",
+      "won",
+      "مكسوبة",
+      "مكسوبه",
+      "منتهية لصالح الموكل",
+    ].includes(value)
+  )
     return "completed";
 
   if (["closed", "مغلقة"].includes(value)) return "closed";

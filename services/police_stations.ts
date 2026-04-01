@@ -26,3 +26,18 @@ export async function getPoliceStations(): Promise<
     error: error?.message ?? null,
   };
 }
+
+export async function getPoliceStationsByGovernorate(
+  governorateId: string,
+): Promise<ApiResponse<PoliceStation[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("police_stations")
+    .select("*")
+    .eq("governorate_id", governorateId)
+    .order("name", { ascending: true });
+  return {
+    data: (data ?? []).map(mapStation),
+    error: error?.message ?? null,
+  };
+}

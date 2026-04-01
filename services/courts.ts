@@ -32,6 +32,38 @@ export async function getCourts(): Promise<ApiResponse<Court[]>> {
   };
 }
 
+export async function getCourtsByDegree(
+  degree: string,
+): Promise<ApiResponse<Court[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("courts")
+    .select("*")
+    .eq("court_degree", degree)
+    .order("name", { ascending: true });
+
+  return {
+    data: (data ?? []).map(mapCourt),
+    error: error?.message ?? null,
+  };
+}
+
+export async function getCourtsByGovernorate(
+  governorateId: string,
+): Promise<ApiResponse<Court[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("courts")
+    .select("*")
+    .eq("governorate_id", governorateId)
+    .order("name", { ascending: true });
+
+  return {
+    data: (data ?? []).map(mapCourt),
+    error: error?.message ?? null,
+  };
+}
+
 export async function addCourt(
   payload: Partial<
     Pick<

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useFormik } from "formik";
@@ -12,9 +12,11 @@ import {
   Plus,
   Pencil,
   Trash,
+  Trash2,
   Save,
   X,
   ChevronRight,
+  Hash,
 } from "lucide-react";
 import {
   updateCase,
@@ -29,14 +31,33 @@ import type {
   CaseNote,
   CaseAttachment,
   Court,
+  CaseType,
+  CourtDivision,
+  Governorate,
+  PoliceStation,
+  PartialProsecution,
   Lawyer,
   User as UserType,
+  Client,
 } from "@/types";
 import {
   editCaseSchema,
   zodToFormikValidate,
   type EditCaseFormValues,
 } from "@/lib/validations/cases";
+import {
+  caseCategoryOptions,
+  civilDegreeOptions,
+  clientRoleOptions,
+  clientTypeOptions,
+  opponentRoleOptions,
+} from "@/lib/enums";
+import {
+  SearchableSelectField,
+  CreatableSelectField,
+  MultiSelectField,
+} from "@/components/ui/SearchableSelect";
+import ClientSelect from "@/components/cases/ClientSelect";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,9 +66,15 @@ interface EditCaseFormProps {
   sessions: CaseSession[];
   notes: CaseNote[];
   attachments: CaseAttachment[];
-  courts: Court[];
+  allCourts: Court[];
+  allCaseTypes: CaseType[];
+  allCourtDivisions: CourtDivision[];
+  allGovernorates: Governorate[];
+  allPoliceStations: PoliceStation[];
+  allPartialProsecutions: PartialProsecution[];
   lawyers: Lawyer[];
   currentUser: UserType;
+  clients: Client[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -134,36 +161,63 @@ export default function EditCaseForm({
   sessions,
   notes,
   attachments,
-  courts,
+  allCourts,
+  allCaseTypes,
+  allCourtDivisions,
+  allGovernorates,
+  allPoliceStations,
+  allPartialProsecutions,
   lawyers,
   currentUser,
+  clients,
 }: EditCaseFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [showCourtSuggestions, setShowCourtSuggestions] = useState(false);
 
   // Formik setup
   const formik = useFormik<EditCaseFormValues>({
     initialValues: {
       caseTitle: caseItem.caseTitle || "",
-      caseType: caseItem.caseType || "",
+      caseCategory: caseItem.caseCategory || "civil",
       caseStatus: caseItem.caseStatus || "",
       caseDescription: caseItem.caseDescription || "",
       startDate: caseItem.startDate ? caseItem.startDate.slice(0, 10) : "",
       nextSessionDate: toDatetimeLocal(caseItem.nextSessionDate),
+      caseNumbers: caseItem.caseNumbers?.length
+        ? caseItem.caseNumbers
+        : [{ caseNumber: "", caseYear: "" }],
       clientName: caseItem.clientName || "",
+      clientType: caseItem.clientType || "فرد",
+      clientRole: caseItem.clientRole || "",
       clientEmail: caseItem.clientEmail || "",
       clientPhone: caseItem.clientPhone || "",
-      clientAddress: (caseItem as any).clientAddress || "",
+      clientAddress: caseItem.clientAddress || "",
+      clientNationalId: caseItem.clientNationalId || "",
       opponentName: caseItem.opponentName || "",
-      opponentEmail: (caseItem as any).opponentEmail || "",
+      opponentType: caseItem.opponentType || "فرد",
+      opponentRole: caseItem.opponentRole || "",
+      opponentEmail: caseItem.opponentEmail || "",
       opponentPhone: caseItem.opponentPhone || "",
-      opponentAddress: (caseItem as any).opponentAddress || "",
-      courtName: caseItem.courtName || "",
-      courtHall: (caseItem as any).courtHall || "",
-      lawyerID: caseItem.lawyerID || "",
-      lawyerName: "",
+      opponentAddress: caseItem.opponentAddress || "",
+      opponentNationalId: caseItem.opponentNationalId || "",
+      civilDegree: caseItem.civilDegree || "",
+      courtId: caseItem.courtId || "",
+      caseTypeId: caseItem.caseTypeId || "",
+      courtDivisionId: caseItem.courtDivisionId || "",
+      governorateId: caseItem.governorateId || "",
+      policeStationId: caseItem.policeStationId || "",
+      partialProsecutionId: caseItem.partialProsecutionId || "",
+      personalServiceTypeId: caseItem.personalServiceTypeId || "",
+      personalCourtDivisionId: caseItem.personalCourtDivisionId || "",
+      familyCourtId: caseItem.familyCourtId || "",
+      personalPartialProsecutionId: caseItem.personalPartialProsecutionId || "",
+      clientId: caseItem.clientId || "",
+      lawyerIDs: caseItem.lawyerIDs?.length
+        ? caseItem.lawyerIDs
+        : caseItem.lawyerID
+          ? [caseItem.lawyerID]
+          : [],
     },
     validate: zodToFormikValidate(editCaseSchema),
     onSubmit: (values) => {
@@ -171,22 +225,42 @@ export default function EditCaseForm({
       startTransition(async () => {
         const result = await updateCase(caseItem.id, {
           caseTitle: values.caseTitle,
-          caseType: values.caseType,
+          caseCategory: values.caseCategory,
           caseStatus: values.caseStatus,
           caseDescription: values.caseDescription,
           startDate: values.startDate || "",
           nextSessionDate: values.nextSessionDate || null,
+          caseNumbers: values.caseNumbers,
           clientName: values.clientName,
+          clientType: values.clientType,
+          clientRole: values.clientRole,
           clientEmail: values.clientEmail,
           clientPhone: values.clientPhone,
           clientAddress: values.clientAddress,
+          clientNationalId: values.clientNationalId,
           opponentName: values.opponentName,
+          opponentType: values.opponentType,
+          opponentRole: values.opponentRole,
           opponentEmail: values.opponentEmail,
           opponentPhone: values.opponentPhone,
           opponentAddress: values.opponentAddress,
-          courtName: values.courtName,
-          courtHall: values.courtHall,
-          lawyerID: values.lawyerID || currentUser.id,
+          opponentNationalId: values.opponentNationalId,
+          civilDegree: values.civilDegree,
+          courtId: values.courtId,
+          caseTypeId: values.caseTypeId,
+          courtDivisionId: values.courtDivisionId,
+          governorateId: values.governorateId,
+          policeStationId: values.policeStationId,
+          partialProsecutionId: values.partialProsecutionId,
+          personalServiceTypeId: values.personalServiceTypeId,
+          personalCourtDivisionId: values.personalCourtDivisionId,
+          familyCourtId: values.familyCourtId,
+          personalPartialProsecutionId: values.personalPartialProsecutionId,
+          lawyerID: values.lawyerIDs?.[0] || currentUser.id,
+          lawyerIDs: values.lawyerIDs?.length
+            ? values.lawyerIDs
+            : [currentUser.id],
+          clientId: values.clientId || undefined,
         });
         if (result?.error) {
           setError(result.error);
@@ -198,9 +272,128 @@ export default function EditCaseForm({
     },
   });
 
-  // Helper to get field error (only if touched)
-  const fieldError = (name: keyof EditCaseFormValues) =>
-    formik.touched[name] && formik.errors[name] ? formik.errors[name] : "";
+  // Helper to get field error (deep path support)
+  const fieldError = (name: string) => {
+    const parts = name.split(".");
+    let touched: unknown = formik.touched;
+    let err: unknown = formik.errors;
+    for (const p of parts) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      touched = (touched as any)?.[p];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      err = (err as any)?.[p];
+    }
+    return touched && typeof err === "string" ? err : "";
+  };
+
+  // ─── Computed filtered lists ──────────────────────────────────────────
+
+  const category = formik.values.caseCategory;
+  const civilDegreeVal = formik.values.civilDegree;
+  const selectedCourtId = formik.values.courtId;
+  const selectedGovernorateId = formik.values.governorateId;
+
+  const civilCourts =
+    civilDegreeVal === "partial" || !civilDegreeVal
+      ? []
+      : allCourts.filter((c) => c.courtDegree === civilDegreeVal);
+  const civilCaseTypes = selectedCourtId
+    ? allCaseTypes.filter(
+        (ct) =>
+          ct.category === "civil" && ct.courtIds.includes(selectedCourtId),
+      )
+    : [];
+  const criminalDivisions = allCourtDivisions.filter(
+    (d) => d.category === "criminal",
+  );
+  const criminalPoliceStations = selectedGovernorateId
+    ? allPoliceStations.filter(
+        (ps) => ps.governorateId === selectedGovernorateId,
+      )
+    : [];
+  const criminalCourts = selectedGovernorateId
+    ? allCourts.filter((c) => c.governorateId === selectedGovernorateId)
+    : [];
+  const personalServiceTypes = allCaseTypes.filter(
+    (ct) => ct.category === "personal",
+  );
+  const personalDivisions = allCourtDivisions.filter(
+    (d) => d.category === "personal",
+  );
+  const familyCourts = allCourts.filter((c) => c.courtDegree === "family");
+
+  // ─── Reset dependent fields on parent change ─────────────────────────
+
+  const resetCategoryFields = useCallback(() => {
+    formik.setFieldValue("civilDegree", "");
+    formik.setFieldValue("courtId", "");
+    formik.setFieldValue("caseTypeId", "");
+    formik.setFieldValue("courtDivisionId", "");
+    formik.setFieldValue("governorateId", "");
+    formik.setFieldValue("policeStationId", "");
+    formik.setFieldValue("partialProsecutionId", "");
+    formik.setFieldValue("personalServiceTypeId", "");
+    formik.setFieldValue("personalCourtDivisionId", "");
+    formik.setFieldValue("familyCourtId", "");
+    formik.setFieldValue("personalPartialProsecutionId", "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [prevCategory, setPrevCategory] = useState(category);
+  useEffect(() => {
+    if (category !== prevCategory) {
+      resetCategoryFields();
+      setPrevCategory(category);
+    }
+  }, [category, prevCategory, resetCategoryFields]);
+
+  const [prevDegree, setPrevDegree] = useState(civilDegreeVal);
+  useEffect(() => {
+    if (civilDegreeVal !== prevDegree) {
+      formik.setFieldValue("courtId", "");
+      formik.setFieldValue("caseTypeId", "");
+      setPrevDegree(civilDegreeVal);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [civilDegreeVal, prevDegree]);
+
+  const [prevCourt, setPrevCourt] = useState(selectedCourtId);
+  useEffect(() => {
+    if (selectedCourtId !== prevCourt) {
+      formik.setFieldValue("caseTypeId", "");
+      setPrevCourt(selectedCourtId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourtId, prevCourt]);
+
+  const [prevGov, setPrevGov] = useState(selectedGovernorateId);
+  useEffect(() => {
+    if (selectedGovernorateId !== prevGov) {
+      formik.setFieldValue("policeStationId", "");
+      formik.setFieldValue("courtId", "");
+      setPrevGov(selectedGovernorateId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGovernorateId, prevGov]);
+
+  // ─── Case Numbers ─────────────────────────────────────────────────────
+
+  const addCaseNumber = () => {
+    const current = formik.values.caseNumbers;
+    if (current.length < 5)
+      formik.setFieldValue("caseNumbers", [
+        ...current,
+        { caseNumber: "", caseYear: "" },
+      ]);
+  };
+  const removeCaseNumber = (index: number) => {
+    const current = formik.values.caseNumbers;
+    if (current.length > 1)
+      formik.setFieldValue(
+        "caseNumbers",
+        current.filter((_, i) => i !== index),
+      );
+  };
 
   // Sessions state
   const [localSessions, setLocalSessions] = useState<CaseSession[]>(sessions);
@@ -362,14 +555,6 @@ export default function EditCaseForm({
     });
   }
 
-  // ─── Court suggestions ───────────────────────────────────────────────────────
-
-  const courtMatches = courts.filter((c) =>
-    c.name
-      .toLowerCase()
-      .includes((formik.values.courtName || "").toLowerCase()),
-  );
-
   // ─── Sessions display ────────────────────────────────────────────────────────
 
   const now = new Date();
@@ -459,57 +644,111 @@ export default function EditCaseForm({
                   </p>
                 )}
               </div>
-              <div>
-                <FieldLabel>رقم القضية</FieldLabel>
-                <input
-                  className={`${inputClass} opacity-60 cursor-not-allowed`}
-                  value={caseItem.id.substring(0, 8)}
-                  readOnly
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <SearchableSelectField
+                  name="caseCategory"
+                  label="تصنيف القضية *"
+                  value={formik.values.caseCategory}
+                  onChange={(val) => formik.setFieldValue("caseCategory", val)}
+                  onBlur={() => formik.setFieldTouched("caseCategory", true)}
+                  error={fieldError("caseCategory")}
+                  placeholder="اختر تصنيف القضية"
+                  options={caseCategoryOptions}
+                />
+                <SearchableSelectField
+                  name="caseStatus"
+                  label="حالة القضية"
+                  value={formik.values.caseStatus}
+                  onChange={(val) => formik.setFieldValue("caseStatus", val)}
+                  onBlur={() => formik.setFieldTouched("caseStatus", true)}
+                  placeholder="اختر الحالة"
+                  options={[
+                    { value: "جارية", label: "جارية" },
+                    { value: "قيد الانتظار", label: "قيد الانتظار" },
+                    {
+                      value: "منتهية لصالح الموكل",
+                      label: "منتهية لصالح الموكل",
+                    },
+                    { value: "مغلقة", label: "مغلقة" },
+                  ]}
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <FieldLabel>نوع القضية</FieldLabel>
-                  <select
-                    name="caseType"
-                    className={inputClass}
-                    value={formik.values.caseType}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
+
+              {/* Case Numbers */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={addCaseNumber}
+                    disabled={formik.values.caseNumbers.length >= 5}
+                    className="flex items-center gap-1 text-sm text-primary hover:text-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="">اختر نوع القضية</option>
-                    {[
-                      "مدني",
-                      "جنائي",
-                      "تجاري",
-                      "إداري",
-                      "أسرة",
-                      "عمالي",
-                      "أخرى",
-                    ].map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
+                    <Plus className="w-4 h-4" /> إضافة رقم
+                  </button>
+                  <FieldLabel required>أرقام القضية</FieldLabel>
                 </div>
-                <div>
-                  <FieldLabel>حالة القضية</FieldLabel>
-                  <select
-                    name="caseStatus"
-                    className={inputClass}
-                    value={formik.values.caseStatus}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
+                {formik.values.caseNumbers.map((cn, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-3 bg-background p-3 rounded-lg border border-border"
                   >
-                    <option value="">اختر الحالة</option>
-                    <option value="نشطة">نشطة</option>
-                    <option value="قيد الانتظار">قيد الانتظار</option>
-                    <option value="مكتملة">مكتملة</option>
-                    <option value="closed">مغلقة</option>
-                  </select>
-                </div>
+                    {formik.values.caseNumbers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeCaseNumber(idx)}
+                        className="mt-3 text-error hover:text-error/80"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-text-muted text-xs">
+                          رقم القضية
+                        </label>
+                        <div className="relative">
+                          <input
+                            name={`caseNumbers.${idx}.caseNumber`}
+                            value={cn.caseNumber}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                            className="p-3 w-full bg-surface border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary pr-9 placeholder:text-text-muted"
+                            placeholder="مثال: 1234"
+                          />
+                          <Hash className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                        </div>
+                        {fieldError(`caseNumbers.${idx}.caseNumber`) && (
+                          <p className="text-error text-xs">
+                            {fieldError(`caseNumbers.${idx}.caseNumber`)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-text-muted text-xs">السنة</label>
+                        <input
+                          name={`caseNumbers.${idx}.caseYear`}
+                          value={cn.caseYear}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className="p-3 w-full bg-surface border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary placeholder:text-text-muted"
+                          placeholder="مثال: 2026"
+                        />
+                        {fieldError(`caseNumbers.${idx}.caseYear`) && (
+                          <p className="text-error text-xs">
+                            {fieldError(`caseNumbers.${idx}.caseYear`)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {typeof formik.errors.caseNumbers === "string" && (
+                  <p className="text-error text-xs">
+                    {formik.errors.caseNumbers}
+                  </p>
+                )}
               </div>
+
               <div>
                 <FieldLabel>وصف القضية</FieldLabel>
                 <textarea
@@ -525,27 +764,116 @@ export default function EditCaseForm({
                   </p>
                 )}
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel>تاريخ البدء</FieldLabel>
+                  <input
+                    type="date"
+                    name="startDate"
+                    className={inputClass}
+                    value={formik.values.startDate}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>الجلسة القادمة</FieldLabel>
+                  <input
+                    type="datetime-local"
+                    name="nextSessionDate"
+                    className={inputClass}
+                    value={formik.values.nextSessionDate}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                  />
+                  {fieldError("nextSessionDate") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("nextSessionDate")}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </SectionCard>
 
           {/* Client Info */}
           <SectionCard>
-            <SectionHeader icon={User} title="معلومات الموكل" />
+            <SectionHeader icon={User} title="بيانات العميل" />
             <div className="flex flex-col gap-4">
-              <div>
-                <FieldLabel required>اسم الموكل</FieldLabel>
-                <input
-                  name="clientName"
-                  className={inputClass}
-                  value={formik.values.clientName}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
+              {/* Client Selector */}
+              <ClientSelect
+                clients={clients}
+                selectedClientId={formik.values.clientId}
+                onClientSelect={(client) => {
+                  formik.setFieldValue("clientId", client?.id || "");
+                }}
+                onFillFields={(client) => {
+                  formik.setFieldValue("clientName", client.name);
+                  formik.setFieldValue(
+                    "clientType",
+                    client.type === "company" ? "شركة" : "فرد",
+                  );
+                  formik.setFieldValue("clientPhone", client.phone);
+                  formik.setFieldValue("clientEmail", client.email);
+                  formik.setFieldValue("clientAddress", client.address);
+                  formik.setFieldValue("clientNationalId", client.nationalId);
+                }}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel required>اسم الموكل</FieldLabel>
+                  <input
+                    name="clientName"
+                    className={inputClass}
+                    value={formik.values.clientName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                  />
+                  {fieldError("clientName") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("clientName")}
+                    </p>
+                  )}
+                </div>
+                <SearchableSelectField
+                  name="clientType"
+                  label="نوع الموكل"
+                  value={formik.values.clientType ?? ""}
+                  onChange={(val) => formik.setFieldValue("clientType", val)}
+                  onBlur={() => formik.setFieldTouched("clientType", true)}
+                  error={fieldError("clientType")}
+                  placeholder="اختر النوع"
+                  options={clientTypeOptions}
                 />
-                {fieldError("clientName") && (
-                  <p className="text-error text-xs mt-1">
-                    {fieldError("clientName")}
-                  </p>
-                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <CreatableSelectField
+                  name="clientRole"
+                  label="صفة الموكل"
+                  value={formik.values.clientRole}
+                  onChange={(val) => formik.setFieldValue("clientRole", val)}
+                  onBlur={() => formik.setFieldTouched("clientRole", true)}
+                  error={fieldError("clientRole")}
+                  placeholder="اختر أو اكتب صفة الموكل"
+                  options={clientRoleOptions}
+                />
+                <div>
+                  <FieldLabel>رقم الهاتف</FieldLabel>
+                  <input
+                    name="clientPhone"
+                    className={inputClass}
+                    value={formik.values.clientPhone}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    placeholder="01XXXXXXXXX"
+                  />
+                  {fieldError("clientPhone") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("clientPhone")}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -565,18 +893,18 @@ export default function EditCaseForm({
                   )}
                 </div>
                 <div>
-                  <FieldLabel>رقم الهاتف</FieldLabel>
+                  <FieldLabel>الرقم القومي</FieldLabel>
                   <input
-                    name="clientPhone"
+                    name="clientNationalId"
                     className={inputClass}
-                    value={formik.values.clientPhone}
+                    value={formik.values.clientNationalId}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    placeholder="01XXXXXXXXX"
+                    placeholder="14 رقم"
                   />
-                  {fieldError("clientPhone") && (
+                  {fieldError("clientNationalId") && (
                     <p className="text-error text-xs mt-1">
-                      {fieldError("clientPhone")}
+                      {fieldError("clientNationalId")}
                     </p>
                   )}
                 </div>
@@ -602,15 +930,58 @@ export default function EditCaseForm({
               color="text-error"
             />
             <div className="flex flex-col gap-4">
-              <div>
-                <FieldLabel>اسم الخصم</FieldLabel>
-                <input
-                  name="opponentName"
-                  className={inputClass}
-                  value={formik.values.opponentName}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel>اسم الخصم</FieldLabel>
+                  <input
+                    name="opponentName"
+                    className={inputClass}
+                    value={formik.values.opponentName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                  />
+                </div>
+                <SearchableSelectField
+                  name="opponentType"
+                  label="نوع الخصم"
+                  value={formik.values.opponentType ?? ""}
+                  onChange={(val) => formik.setFieldValue("opponentType", val)}
+                  onBlur={() => formik.setFieldTouched("opponentType", true)}
+                  error={fieldError("opponentType")}
+                  placeholder="اختر نوع الخصم"
+                  options={[
+                    { value: "فرد", label: "فرد" },
+                    { value: "شركة", label: "شركة" },
+                  ]}
                 />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <CreatableSelectField
+                  name="opponentRole"
+                  label="صفة الخصم"
+                  value={formik.values.opponentRole ?? ""}
+                  onChange={(val) => formik.setFieldValue("opponentRole", val)}
+                  onBlur={() => formik.setFieldTouched("opponentRole", true)}
+                  error={fieldError("opponentRole")}
+                  placeholder="اختر أو اكتب صفة الخصم"
+                  options={opponentRoleOptions}
+                />
+                <div>
+                  <FieldLabel>الرقم القومي</FieldLabel>
+                  <input
+                    name="opponentNationalId"
+                    className={inputClass}
+                    value={formik.values.opponentNationalId}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    placeholder="14 رقم"
+                  />
+                  {fieldError("opponentNationalId") && (
+                    <p className="text-error text-xs mt-1">
+                      {fieldError("opponentNationalId")}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -659,99 +1030,225 @@ export default function EditCaseForm({
             </div>
           </SectionCard>
 
-          {/* Court Info */}
+          {/* Dynamic Court/Category Fields */}
           <SectionCard>
-            <SectionHeader icon={Scale} title="معلومات المحكمة" />
-            <div className="flex flex-col gap-4">
-              {/* Court name with autocomplete */}
-              <div className="relative">
-                <FieldLabel required>المحكمة</FieldLabel>
-                <input
-                  type="text"
-                  name="courtName"
-                  className={inputClass}
-                  value={formik.values.courtName}
-                  onChange={(e) => {
-                    formik.handleChange(e);
-                    setShowCourtSuggestions(true);
-                  }}
-                  onFocus={() => setShowCourtSuggestions(true)}
-                  onBlur={(e) => {
-                    formik.handleBlur(e);
-                    setTimeout(() => setShowCourtSuggestions(false), 200);
-                  }}
-                  autoComplete="off"
-                  placeholder="اختر محكمة أو اكتب اسم جديد"
-                />
-                {showCourtSuggestions && (
-                  <ul className="absolute z-10 w-full bg-surface border border-border mt-1 rounded-lg max-h-60 overflow-auto shadow-lg top-full left-0">
-                    {courtMatches.map((court) => (
-                      <li
-                        key={court.id}
-                        className="p-3 hover:bg-beige-light cursor-pointer text-text-primary border-b border-border/50 last:border-0"
-                        onClick={() => {
-                          formik.setFieldValue("courtName", court.name);
-                          setShowCourtSuggestions(false);
-                        }}
-                      >
-                        {court.name}
-                      </li>
-                    ))}
-                    {courtMatches.length === 0 && (
-                      <li className="p-3 text-text-muted text-sm">
-                        لا توجد نتائج (سيتم حفظ الاسم الجديد)
-                      </li>
-                    )}
-                  </ul>
-                )}
-                {fieldError("courtName") && (
-                  <p className="text-error text-xs mt-1">
-                    {fieldError("courtName")}
-                  </p>
-                )}
-              </div>
+            <SectionHeader icon={Scale} title="بيانات المحكمة والتوزيع" />
 
-              <div>
-                <FieldLabel>القاعة</FieldLabel>
-                <input
-                  name="courtHall"
-                  className={inputClass}
-                  value={formik.values.courtHall}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
+            {/* Civil Fields */}
+            {category === "civil" && (
+              <div className="flex flex-col gap-4">
+                <SearchableSelectField
+                  name="civilDegree"
+                  label="الدرجة *"
+                  value={formik.values.civilDegree}
+                  onChange={(val) => formik.setFieldValue("civilDegree", val)}
+                  onBlur={() => formik.setFieldTouched("civilDegree", true)}
+                  error={fieldError("civilDegree")}
+                  placeholder="اختر الدرجة"
+                  options={civilDegreeOptions}
+                />
+                {civilDegreeVal && (
+                  <SearchableSelectField
+                    name="courtId"
+                    label={
+                      civilDegreeVal === "partial"
+                        ? "النيابة الجزئية"
+                        : "المحكمة"
+                    }
+                    value={formik.values.courtId}
+                    onChange={(val) => formik.setFieldValue("courtId", val)}
+                    onBlur={() => formik.setFieldTouched("courtId", true)}
+                    error={fieldError("courtId")}
+                    placeholder={
+                      civilDegreeVal === "partial"
+                        ? "اختر النيابة"
+                        : "اختر المحكمة"
+                    }
+                    options={
+                      civilDegreeVal === "partial"
+                        ? allPartialProsecutions.map((pp) => ({
+                            value: pp.id,
+                            label: pp.name,
+                          }))
+                        : civilCourts.map((c) => ({
+                            value: c.id,
+                            label: c.name,
+                          }))
+                    }
+                  />
+                )}
+                {selectedCourtId && civilDegreeVal !== "partial" && (
+                  <SearchableSelectField
+                    name="caseTypeId"
+                    label="نوع القضية"
+                    value={formik.values.caseTypeId}
+                    onChange={(val) => formik.setFieldValue("caseTypeId", val)}
+                    onBlur={() => formik.setFieldTouched("caseTypeId", true)}
+                    placeholder="اختر نوع القضية"
+                    options={civilCaseTypes.map((ct) => ({
+                      value: ct.id,
+                      label: ct.name,
+                    }))}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Criminal Fields */}
+            {category === "criminal" && (
+              <div className="flex flex-col gap-4">
+                <SearchableSelectField
+                  name="courtDivisionId"
+                  label="الدائرة *"
+                  value={formik.values.courtDivisionId}
+                  onChange={(val) =>
+                    formik.setFieldValue("courtDivisionId", val)
+                  }
+                  onBlur={() => formik.setFieldTouched("courtDivisionId", true)}
+                  error={fieldError("courtDivisionId")}
+                  placeholder="اختر الدائرة"
+                  options={criminalDivisions.map((d) => ({
+                    value: d.id,
+                    label: d.name,
+                  }))}
+                />
+                <SearchableSelectField
+                  name="governorateId"
+                  label="المحافظة *"
+                  value={formik.values.governorateId}
+                  onChange={(val) => formik.setFieldValue("governorateId", val)}
+                  onBlur={() => formik.setFieldTouched("governorateId", true)}
+                  error={fieldError("governorateId")}
+                  placeholder="اختر المحافظة"
+                  options={allGovernorates.map((g) => ({
+                    value: g.id,
+                    label: g.name,
+                  }))}
+                />
+                {selectedGovernorateId && (
+                  <>
+                    <SearchableSelectField
+                      name="policeStationId"
+                      label="جهة القيد (قسم الشرطة)"
+                      value={formik.values.policeStationId}
+                      onChange={(val) =>
+                        formik.setFieldValue("policeStationId", val)
+                      }
+                      onBlur={() =>
+                        formik.setFieldTouched("policeStationId", true)
+                      }
+                      placeholder="اختر قسم الشرطة"
+                      options={criminalPoliceStations.map((ps) => ({
+                        value: ps.id,
+                        label: ps.name,
+                      }))}
+                    />
+                    <SearchableSelectField
+                      name="courtId"
+                      label="المحكمة"
+                      value={formik.values.courtId}
+                      onChange={(val) => formik.setFieldValue("courtId", val)}
+                      onBlur={() => formik.setFieldTouched("courtId", true)}
+                      placeholder="اختر المحكمة"
+                      options={criminalCourts.map((c) => ({
+                        value: c.id,
+                        label: c.name,
+                      }))}
+                    />
+                  </>
+                )}
+                <SearchableSelectField
+                  name="partialProsecutionId"
+                  label="النيابة الجزئية"
+                  value={formik.values.partialProsecutionId}
+                  onChange={(val) =>
+                    formik.setFieldValue("partialProsecutionId", val)
+                  }
+                  onBlur={() =>
+                    formik.setFieldTouched("partialProsecutionId", true)
+                  }
+                  placeholder="اختر النيابة"
+                  options={allPartialProsecutions.map((pp) => ({
+                    value: pp.id,
+                    label: pp.name,
+                  }))}
                 />
               </div>
+            )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <FieldLabel>تاريخ البدء</FieldLabel>
-                  <input
-                    type="date"
-                    name="startDate"
-                    className={inputClass}
-                    value={formik.values.startDate}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                  />
-                </div>
-                <div>
-                  <FieldLabel>الجلسة القادمة</FieldLabel>
-                  <input
-                    type="datetime-local"
-                    name="nextSessionDate"
-                    className={inputClass}
-                    value={formik.values.nextSessionDate}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                  />
-                  {fieldError("nextSessionDate") && (
-                    <p className="text-error text-xs mt-1">
-                      {fieldError("nextSessionDate")}
-                    </p>
-                  )}
-                </div>
+            {/* Personal Fields */}
+            {category === "personal" && (
+              <div className="flex flex-col gap-4">
+                <SearchableSelectField
+                  name="personalServiceTypeId"
+                  label="نوع الخدمة *"
+                  value={formik.values.personalServiceTypeId}
+                  onChange={(val) =>
+                    formik.setFieldValue("personalServiceTypeId", val)
+                  }
+                  onBlur={() =>
+                    formik.setFieldTouched("personalServiceTypeId", true)
+                  }
+                  error={fieldError("personalServiceTypeId")}
+                  placeholder="اختر نوع الخدمة"
+                  options={personalServiceTypes.map((st) => ({
+                    value: st.id,
+                    label: st.name,
+                  }))}
+                />
+                <SearchableSelectField
+                  name="personalCourtDivisionId"
+                  label="الدائرة *"
+                  value={formik.values.personalCourtDivisionId}
+                  onChange={(val) =>
+                    formik.setFieldValue("personalCourtDivisionId", val)
+                  }
+                  onBlur={() =>
+                    formik.setFieldTouched("personalCourtDivisionId", true)
+                  }
+                  error={fieldError("personalCourtDivisionId")}
+                  placeholder="اختر الدائرة"
+                  options={personalDivisions.map((d) => ({
+                    value: d.id,
+                    label: d.name,
+                  }))}
+                />
+                <SearchableSelectField
+                  name="familyCourtId"
+                  label="النيابة الكلية (محكمة الأسرة)"
+                  value={formik.values.familyCourtId}
+                  onChange={(val) => formik.setFieldValue("familyCourtId", val)}
+                  onBlur={() => formik.setFieldTouched("familyCourtId", true)}
+                  placeholder="اختر محكمة الأسرة"
+                  options={familyCourts.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  }))}
+                />
+                <SearchableSelectField
+                  name="personalPartialProsecutionId"
+                  label="النيابة الجزئية"
+                  value={formik.values.personalPartialProsecutionId}
+                  onChange={(val) =>
+                    formik.setFieldValue("personalPartialProsecutionId", val)
+                  }
+                  onBlur={() =>
+                    formik.setFieldTouched("personalPartialProsecutionId", true)
+                  }
+                  placeholder="اختر النيابة"
+                  options={allPartialProsecutions.map((pp) => ({
+                    value: pp.id,
+                    label: pp.name,
+                  }))}
+                />
               </div>
-            </div>
+            )}
+
+            {!category && (
+              <p className="text-text-muted text-sm">
+                يرجى اختيار تصنيف القضية لعرض الحقول المناسبة
+              </p>
+            )}
           </SectionCard>
 
           {/* Sessions */}
@@ -1007,41 +1504,27 @@ export default function EditCaseForm({
           {isOwner && !isPrivateCase && (
             <SectionCard>
               <h2 className="text-text-primary text-xl font-semibold mb-4">
-                المحامي المسؤول
+                المحامين المسؤولين
               </h2>
-              <FieldLabel>اختر المحامي</FieldLabel>
-              <select
-                name="lawyerID"
-                className={`${inputClass} mt-2`}
-                value={formik.values.lawyerID}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  const selectedLawyer = lawyers.find(
-                    (l) => l.id === selectedId,
-                  );
-                  formik.setFieldValue("lawyerID", selectedId);
-                  formik.setFieldValue(
-                    "lawyerName",
-                    selectedLawyer
-                      ? `${selectedLawyer.firstName} ${selectedLawyer.lastName}`
-                      : "",
-                  );
-                }}
-              >
-                <option value="" disabled>
-                  اختر المحامي
-                </option>
-                <option value={currentUser.id}>
-                  {currentUser.firstName} {currentUser.lastName} (أنا)
-                </option>
-                {lawyers
-                  .filter((l) => l.id !== currentUser.id)
-                  .map((lawyer) => (
-                    <option key={lawyer.id} value={lawyer.id}>
-                      {lawyer.firstName} {lawyer.lastName}
-                    </option>
-                  ))}
-              </select>
+              <MultiSelectField
+                name="lawyerIDs"
+                label="اختر محامي أو أكثر"
+                values={formik.values.lawyerIDs}
+                onChange={(vals) => formik.setFieldValue("lawyerIDs", vals)}
+                placeholder="اختر محامي أو أكثر"
+                options={[
+                  {
+                    value: currentUser.id,
+                    label: `${currentUser.firstName} ${currentUser.lastName} (أنا)`,
+                  },
+                  ...lawyers
+                    .filter((l) => l.id !== currentUser.id)
+                    .map((lawyer) => ({
+                      value: lawyer.id,
+                      label: `${lawyer.firstName} ${lawyer.lastName}`,
+                    })),
+                ]}
+              />
             </SectionCard>
           )}
 

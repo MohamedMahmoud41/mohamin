@@ -30,9 +30,22 @@ import type {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapCase(row: Record<string, any>): Case {
+  let caseNumbers: { caseNumber: string; caseYear: string }[] = [];
+  try {
+    const raw = row.case_numbers;
+    if (typeof raw === "string") {
+      caseNumbers = JSON.parse(raw);
+    } else if (Array.isArray(raw)) {
+      caseNumbers = raw;
+    }
+  } catch {
+    caseNumbers = [];
+  }
+
   return {
     id: row.id,
     caseTitle: row.case_title,
+    caseCategory: row.case_category ?? "civil",
     caseType: row.case_type,
     caseStatus: row.case_status,
     caseDescription: row.case_description,
@@ -40,19 +53,43 @@ function mapCase(row: Record<string, any>): Case {
     nextSessionDate: row.next_session_date ?? null,
     officeId: row.office_id,
     lawyerID: row.lawyer_id,
+    lawyerIDs: [], // populated separately from case_lawyers junction
+    clientId: row.client_id ?? undefined,
+    caseNumbers,
+    // Civil
+    civilDegree: row.civil_degree ?? "",
+    courtId: row.court_id ?? "",
+    caseTypeId: row.case_type_id ?? "",
+    // Criminal
+    courtDivisionId: row.court_division_id ?? "",
+    governorateId: row.governorate_id ?? "",
+    policeStationId: row.police_station_id ?? "",
+    partialProsecutionId: row.partial_prosecution_id ?? "",
+    // Personal
+    personalServiceTypeId: row.personal_service_type_id ?? "",
+    personalCourtDivisionId: row.personal_court_division_id ?? "",
+    familyCourtId: row.family_court_id ?? "",
+    personalPartialProsecutionId: row.personal_partial_prosecution_id ?? "",
+    // Legacy
     courtName: row.court_name,
     courtHall: row.court_hall ?? "",
     courtNum: row.court_num ?? "",
+    // Client
     clientName: row.client_name,
     clientPhone: row.client_phone,
     clientEmail: row.client_email,
     clientAddress: row.client_address ?? "",
     clientType: row.client_type ?? "",
+    clientNationalId: row.client_national_id ?? "",
+    clientRole: row.client_role ?? "",
+    // Opponent
     opponentName: row.opponent_name,
     opponentPhone: row.opponent_phone,
     opponentEmail: row.opponent_email ?? "",
     opponentAddress: row.opponent_address ?? "",
     opponentType: row.opponent_type ?? "",
+    opponentNationalId: row.opponent_national_id ?? "",
+    opponentRole: row.opponent_role ?? "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -99,13 +136,19 @@ function mapCaseAttachment(row: Record<string, any>): CaseAttachment {
 
 export async function getCaseById(caseId: string): Promise<ApiResponse<Case>> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("cases")
-    .select("*")
-    .eq("id", caseId)
-    .single();
+  const [{ data, error }, { data: lawyerRows }] = await Promise.all([
+    supabase.from("cases").select("*").eq("id", caseId).single(),
+    supabase.from("case_lawyers").select("lawyer_id").eq("case_id", caseId),
+  ]);
 
-  return { data: data ? mapCase(data) : null, error: error?.message ?? null };
+  if (!data) return { data: null, error: error?.message ?? null };
+  const mapped = mapCase(data);
+  mapped.lawyerIDs = lawyerRows?.map((r) => r.lawyer_id) ?? [];
+  // Ensure the primary lawyer_id is included
+  if (mapped.lawyerID && !mapped.lawyerIDs.includes(mapped.lawyerID)) {
+    mapped.lawyerIDs.unshift(mapped.lawyerID);
+  }
+  return { data: mapped, error: null };
 }
 
 export async function getCasesByIds(

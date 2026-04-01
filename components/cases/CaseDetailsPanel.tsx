@@ -67,7 +67,16 @@ function getStatusClass(status: string) {
     return "bg-info/10 text-info";
   if (["قيد الانتظار", "pending", "انتظار", "قيد الإنتظار"].includes(s))
     return "bg-warning/10 text-warning";
-  if (["مكسوبة", "مكسوبه", "completed", "won", "مكتملة"].includes(s))
+  if (
+    [
+      "مكسوبة",
+      "مكسوبه",
+      "completed",
+      "won",
+      "مكتملة",
+      "منتهية لصالح الموكل",
+    ].includes(s)
+  )
     return "bg-success/10 text-success";
   return "bg-border text-text-secondary";
 }

@@ -24,3 +24,18 @@ export async function getCourtDivisions(): Promise<
     error: error?.message ?? null,
   };
 }
+
+export async function getCourtDivisionsByCategory(
+  category: string,
+): Promise<ApiResponse<CourtDivision[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("court_divisions")
+    .select("*")
+    .eq("category", category)
+    .order("name", { ascending: true });
+  return {
+    data: (data ?? []).map(mapDivision),
+    error: error?.message ?? null,
+  };
+}

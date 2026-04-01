@@ -3,58 +3,113 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import type { Case, CaseNote, CaseSession, CaseAttachment } from "@/types";
+import type {
+  Case,
+  CaseNote,
+  CaseSession,
+  CaseAttachment,
+  CaseNumber,
+} from "@/types";
 
 // ─── camelCase form data → snake_case DB row ─────────────────────────────────
 
 export interface CaseInput {
   caseTitle: string;
-  caseType: string;
+  caseCategory: string;
+  caseType?: string;
   caseStatus: string;
   caseDescription: string;
   startDate: string;
   nextSessionDate?: string | null;
   officeId: string;
   lawyerID: string;
+  lawyerIDs?: string[];
   lawyerName?: string;
-  courtName: string;
+  clientId?: string;
+  caseNumbers: CaseNumber[];
+  // Civil fields
+  civilDegree?: string;
+  courtId?: string;
+  caseTypeId?: string;
+  // Criminal fields
+  courtDivisionId?: string;
+  governorateId?: string;
+  policeStationId?: string;
+  partialProsecutionId?: string;
+  // Personal fields
+  personalServiceTypeId?: string;
+  personalCourtDivisionId?: string;
+  familyCourtId?: string;
+  personalPartialProsecutionId?: string;
+  // Legacy
+  courtName?: string;
   courtHall?: string;
   courtNum?: string;
+  // Client
   clientName: string;
   clientType?: string;
   clientPhone: string;
   clientEmail?: string;
   clientAddress?: string;
+  clientNationalId?: string;
+  clientRole?: string;
+  // Opponent
   opponentName: string;
   opponentType?: string;
   opponentPhone?: string;
   opponentEmail?: string;
   opponentAddress?: string;
+  opponentNationalId?: string;
+  opponentRole?: string;
 }
 
 function toDbRow(data: CaseInput) {
   return {
     case_title: data.caseTitle,
-    case_type: data.caseType,
+    case_category: data.caseCategory,
+    case_type: data.caseType || "",
     case_status: data.caseStatus,
     case_description: data.caseDescription,
     start_date: data.startDate,
     next_session_date: data.nextSessionDate || null,
     office_id: data.officeId,
     lawyer_id: data.lawyerID,
-    court_name: data.courtName,
+    client_id: data.clientId || null,
+    case_numbers: JSON.stringify(data.caseNumbers || []),
+    // Civil
+    civil_degree: data.civilDegree || "",
+    court_id: data.courtId || null,
+    case_type_id: data.caseTypeId || null,
+    // Criminal
+    court_division_id: data.courtDivisionId || null,
+    governorate_id: data.governorateId || null,
+    police_station_id: data.policeStationId || null,
+    partial_prosecution_id: data.partialProsecutionId || null,
+    // Personal
+    personal_service_type_id: data.personalServiceTypeId || null,
+    personal_court_division_id: data.personalCourtDivisionId || null,
+    family_court_id: data.familyCourtId || null,
+    personal_partial_prosecution_id: data.personalPartialProsecutionId || null,
+    // Legacy
+    court_name: data.courtName || "",
     court_hall: data.courtHall || "",
     court_num: data.courtNum || "",
+    // Client
     client_name: data.clientName,
     client_phone: data.clientPhone,
     client_email: data.clientEmail || "",
     client_address: data.clientAddress || "",
     client_type: data.clientType || "",
+    client_national_id: data.clientNationalId || "",
+    client_role: data.clientRole || "",
+    // Opponent
     opponent_name: data.opponentName,
     opponent_phone: data.opponentPhone || "",
     opponent_email: data.opponentEmail || "",
     opponent_address: data.opponentAddress || "",
     opponent_type: data.opponentType || "",
+    opponent_national_id: data.opponentNationalId || "",
+    opponent_role: data.opponentRole || "",
   };
 }
 
@@ -62,6 +117,7 @@ function toDbPartial(data: Partial<CaseInput>) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const row: Record<string, any> = {};
   if (data.caseTitle !== undefined) row.case_title = data.caseTitle;
+  if (data.caseCategory !== undefined) row.case_category = data.caseCategory;
   if (data.caseType !== undefined) row.case_type = data.caseType;
   if (data.caseStatus !== undefined) row.case_status = data.caseStatus;
   if (data.caseDescription !== undefined)
@@ -71,20 +127,55 @@ function toDbPartial(data: Partial<CaseInput>) {
     row.next_session_date = data.nextSessionDate || null;
   if (data.officeId !== undefined) row.office_id = data.officeId;
   if (data.lawyerID !== undefined) row.lawyer_id = data.lawyerID;
+  if (data.clientId !== undefined) row.client_id = data.clientId || null;
+  if (data.caseNumbers !== undefined)
+    row.case_numbers = JSON.stringify(data.caseNumbers);
+  // Civil
+  if (data.civilDegree !== undefined) row.civil_degree = data.civilDegree;
+  if (data.courtId !== undefined) row.court_id = data.courtId || null;
+  if (data.caseTypeId !== undefined) row.case_type_id = data.caseTypeId || null;
+  // Criminal
+  if (data.courtDivisionId !== undefined)
+    row.court_division_id = data.courtDivisionId || null;
+  if (data.governorateId !== undefined)
+    row.governorate_id = data.governorateId || null;
+  if (data.policeStationId !== undefined)
+    row.police_station_id = data.policeStationId || null;
+  if (data.partialProsecutionId !== undefined)
+    row.partial_prosecution_id = data.partialProsecutionId || null;
+  // Personal
+  if (data.personalServiceTypeId !== undefined)
+    row.personal_service_type_id = data.personalServiceTypeId || null;
+  if (data.personalCourtDivisionId !== undefined)
+    row.personal_court_division_id = data.personalCourtDivisionId || null;
+  if (data.familyCourtId !== undefined)
+    row.family_court_id = data.familyCourtId || null;
+  if (data.personalPartialProsecutionId !== undefined)
+    row.personal_partial_prosecution_id =
+      data.personalPartialProsecutionId || null;
+  // Legacy
   if (data.courtName !== undefined) row.court_name = data.courtName;
   if (data.courtHall !== undefined) row.court_hall = data.courtHall;
   if (data.courtNum !== undefined) row.court_num = data.courtNum;
+  // Client
   if (data.clientName !== undefined) row.client_name = data.clientName;
   if (data.clientPhone !== undefined) row.client_phone = data.clientPhone;
   if (data.clientEmail !== undefined) row.client_email = data.clientEmail;
   if (data.clientAddress !== undefined) row.client_address = data.clientAddress;
   if (data.clientType !== undefined) row.client_type = data.clientType;
+  if (data.clientNationalId !== undefined)
+    row.client_national_id = data.clientNationalId;
+  if (data.clientRole !== undefined) row.client_role = data.clientRole;
+  // Opponent
   if (data.opponentName !== undefined) row.opponent_name = data.opponentName;
   if (data.opponentPhone !== undefined) row.opponent_phone = data.opponentPhone;
   if (data.opponentEmail !== undefined) row.opponent_email = data.opponentEmail;
   if (data.opponentAddress !== undefined)
     row.opponent_address = data.opponentAddress;
   if (data.opponentType !== undefined) row.opponent_type = data.opponentType;
+  if (data.opponentNationalId !== undefined)
+    row.opponent_national_id = data.opponentNationalId;
+  if (data.opponentRole !== undefined) row.opponent_role = data.opponentRole;
   return row;
 }
 
@@ -109,20 +200,30 @@ export async function createCase(
 
   if (error) return { data: null, error: error.message };
 
-  // Update the assigned lawyer's private_cases_ids (denormalized array)
-  const assignedLawyerId = data.lawyerID || user.id;
-  const { data: lawyerRecord } = await supabase
-    .from("users")
-    .select("private_cases_ids")
-    .eq("id", assignedLawyerId)
-    .single();
-
-  const existing: string[] = lawyerRecord?.private_cases_ids ?? [];
-  if (!existing.includes(result.id)) {
+  // Insert into case_lawyers junction table
+  const lawyerIds = data.lawyerIDs?.length
+    ? data.lawyerIDs
+    : [data.lawyerID || user.id];
+  if (lawyerIds.length > 0) {
     await supabase
+      .from("case_lawyers")
+      .insert(lawyerIds.map((lid) => ({ case_id: result.id, lawyer_id: lid })));
+  }
+
+  // Update the assigned lawyers' private_cases_ids (denormalized array)
+  for (const lid of lawyerIds) {
+    const { data: lawyerRecord } = await supabase
       .from("users")
-      .update({ private_cases_ids: [...existing, result.id] })
-      .eq("id", assignedLawyerId);
+      .select("private_cases_ids")
+      .eq("id", lid)
+      .single();
+    const existing: string[] = lawyerRecord?.private_cases_ids ?? [];
+    if (!existing.includes(result.id)) {
+      await supabase
+        .from("users")
+        .update({ private_cases_ids: [...existing, result.id] })
+        .eq("id", lid);
+    }
   }
 
   // Auto-create initial upcoming session if nextSessionDate is provided
@@ -153,6 +254,19 @@ export async function updateCase(
     .eq("id", caseId)
     .select()
     .single();
+
+  // Sync case_lawyers junction table if lawyerIDs provided
+  if (data.lawyerIDs) {
+    // Delete existing assignments and re-insert
+    await supabase.from("case_lawyers").delete().eq("case_id", caseId);
+    if (data.lawyerIDs.length > 0) {
+      await supabase
+        .from("case_lawyers")
+        .insert(
+          data.lawyerIDs.map((lid) => ({ case_id: caseId, lawyer_id: lid })),
+        );
+    }
+  }
 
   revalidatePath(`/cases/${caseId}`);
   revalidatePath("/cases");
