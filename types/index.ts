@@ -175,6 +175,21 @@ export interface CaseAttachment {
   uploadedAt: string;
 }
 
+// ─── Case Report (محاضر المحكمة) ─────────────────────────────────────────────
+
+export interface CaseReport {
+  id: string;
+  caseId: string;
+  documentType: string;
+  documentNumber: string;
+  deliveryDate: string | null;
+  receiverName: string;
+  courtId: string | null;
+  bailiffOffice: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Lawyer ──────────────────────────────────────────────────────────────────
 
 export interface Lawyer {

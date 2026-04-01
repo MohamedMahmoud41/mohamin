@@ -9,6 +9,7 @@ import type {
   CaseSession,
   CaseAttachment,
   CaseNumber,
+  CaseReport,
 } from "@/types";
 
 // ─── camelCase form data → snake_case DB row ─────────────────────────────────
@@ -601,4 +602,65 @@ export async function getCaseFileSignedUrl(
   }
 
   return { url: data?.signedUrl ?? null, error: null };
+}
+
+// ─── Case Reports (محاضر المحكمة) ─────────────────────────────────────────────
+
+export async function addCaseReport(
+  caseId: string,
+  reportData: {
+    documentType: string;
+    documentNumber?: string;
+    deliveryDate?: string;
+    receiverName?: string;
+    courtId?: string;
+    bailiffOffice?: string;
+  },
+): Promise<{ data: CaseReport | null; error: string | null }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("case_reports")
+    .insert({
+      case_id: caseId,
+      document_type: reportData.documentType,
+      document_number: reportData.documentNumber || null,
+      delivery_date: reportData.deliveryDate || null,
+      receiver_name: reportData.receiverName || null,
+      court_id: reportData.courtId || null,
+      bailiff_office: reportData.bailiffOffice || null,
+    })
+    .select()
+    .single();
+
+  revalidatePath(`/cases/${caseId}`);
+  if (error || !data) return { data: null, error: error?.message ?? null };
+  return {
+    data: {
+      id: data.id,
+      caseId: data.case_id,
+      documentType: data.document_type,
+      documentNumber: data.document_number ?? "",
+      deliveryDate: data.delivery_date,
+      receiverName: data.receiver_name ?? "",
+      courtId: data.court_id,
+      bailiffOffice: data.bailiff_office ?? "",
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    },
+    error: null,
+  };
+}
+
+export async function deleteCaseReport(
+  caseId: string,
+  reportId: string,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("case_reports")
+    .delete()
+    .eq("id", reportId);
+
+  revalidatePath(`/cases/${caseId}`);
+  return { error: error?.message ?? null };
 }
