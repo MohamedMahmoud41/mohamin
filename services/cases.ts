@@ -24,6 +24,7 @@ import type {
   CaseNote,
   CaseSession,
   CaseAttachment,
+  SessionAttachment,
   DashboardSession,
   ApiResponse,
 } from "@/types";
@@ -116,6 +117,8 @@ function mapCaseSession(row: Record<string, any>): CaseSession {
     sessionDate: row.session_date,
     status: row.status ?? "upcoming",
     decision: row.decision ?? null,
+    category: row.category ?? "normal",
+    isMandatory: row.is_mandatory ?? false,
     notes: row.notes,
     createdAt: row.created_at,
   };
@@ -244,6 +247,56 @@ export async function getCaseAttachments(
 }
 
 /**
+ * Fetch all session attachments for a case (across all its sessions).
+ */
+export async function getSessionAttachmentsByCaseId(
+  caseId: string,
+): Promise<
+  ApiResponse<
+    (SessionAttachment & { sessionDate: string; sessionCategory: string })[]
+  >
+> {
+  const supabase = await createClient();
+
+  // Get all session IDs for this case
+  const { data: sessions, error: sessErr } = await supabase
+    .from("case_sessions")
+    .select("id, session_date, category")
+    .eq("case_id", caseId);
+
+  if (sessErr) return { data: [], error: sessErr.message };
+  if (!sessions || sessions.length === 0) return { data: [], error: null };
+
+  const sessionIds = sessions.map((s) => s.id);
+  const sessionMap = new Map(sessions.map((s) => [s.id, s]));
+
+  const { data, error } = await supabase
+    .from("session_attachments")
+    .select("*")
+    .in("session_id", sessionIds)
+    .order("created_at", { ascending: false });
+
+  if (error) return { data: [], error: error.message };
+
+  const mapped = (data ?? []).map((row) => {
+    const sess = sessionMap.get(row.session_id);
+    return {
+      id: row.id,
+      sessionId: row.session_id,
+      fileName: row.file_name,
+      fileUrl: row.file_url,
+      fileType: row.file_type,
+      fileSize: row.file_size,
+      createdAt: row.created_at,
+      sessionDate: sess?.session_date ?? "",
+      sessionCategory: sess?.category ?? "normal",
+    };
+  });
+
+  return { data: mapped, error: null };
+}
+
+/**
  * Fetch upcoming sessions (status="upcoming") for a given set of case IDs,
  * enriched with case information for dashboard display.
  */
@@ -256,7 +309,7 @@ export async function getUpcomingSessionsForCases(
 
   const { data, error } = await supabase
     .from("case_sessions")
-    .select("id, case_id, session_date, status")
+    .select("id, case_id, session_date, status, category, is_mandatory")
     .in("case_id", caseIds)
     .eq("status", "upcoming")
     .order("session_date", { ascending: true });
@@ -274,6 +327,106 @@ export async function getUpcomingSessionsForCases(
         caseId: row.case_id,
         sessionDate: row.session_date,
         status: row.status,
+        category: row.category ?? "normal",
+        isMandatory: row.is_mandatory ?? false,
+        caseTitle: c.caseTitle,
+        clientName: c.clientName,
+        courtName: c.courtName || "غير محدد",
+      };
+    })
+    .filter(Boolean) as DashboardSession[];
+
+  return { data: enriched, error: null };
+}
+
+/**
+ * Fetch tomorrow's sessions for dashboard display.
+ */
+export async function getTomorrowSessionsForCases(
+  caseIds: string[],
+  cases: Case[],
+): Promise<ApiResponse<DashboardSession[]>> {
+  if (!caseIds.length) return { data: [], error: null };
+  const supabase = await createClient();
+
+  // Build tomorrow's date range
+  const now = new Date();
+  const tomorrowStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1,
+  );
+  const tomorrowEnd = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 2,
+  );
+
+  const { data, error } = await supabase
+    .from("case_sessions")
+    .select("id, case_id, session_date, status, category, is_mandatory")
+    .in("case_id", caseIds)
+    .eq("status", "upcoming")
+    .gte("session_date", tomorrowStart.toISOString())
+    .lt("session_date", tomorrowEnd.toISOString())
+    .order("session_date", { ascending: true });
+
+  if (error) return { data: null, error: error.message };
+
+  const caseMap = new Map(cases.map((c) => [c.id, c]));
+
+  const enriched: DashboardSession[] = (data ?? [])
+    .map((row) => {
+      const c = caseMap.get(row.case_id);
+      if (!c) return null;
+      return {
+        sessionId: row.id,
+        caseId: row.case_id,
+        sessionDate: row.session_date,
+        status: row.status,
+        category: row.category ?? "normal",
+        isMandatory: row.is_mandatory ?? false,
+        caseTitle: c.caseTitle,
+        clientName: c.clientName,
+        courtName: c.courtName || "غير محدد",
+      };
+    })
+    .filter(Boolean) as DashboardSession[];
+
+  return { data: enriched, error: null };
+}
+
+/**
+ * Fetch ALL sessions for the sessions page (calendar + list views).
+ */
+export async function getAllSessionsForCases(
+  caseIds: string[],
+  cases: Case[],
+): Promise<ApiResponse<DashboardSession[]>> {
+  if (!caseIds.length) return { data: [], error: null };
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("case_sessions")
+    .select("id, case_id, session_date, status, category, is_mandatory")
+    .in("case_id", caseIds)
+    .order("session_date", { ascending: true });
+
+  if (error) return { data: null, error: error.message };
+
+  const caseMap = new Map(cases.map((c) => [c.id, c]));
+
+  const enriched: DashboardSession[] = (data ?? [])
+    .map((row) => {
+      const c = caseMap.get(row.case_id);
+      if (!c) return null;
+      return {
+        sessionId: row.id,
+        caseId: row.case_id,
+        sessionDate: row.session_date,
+        status: row.status,
+        category: row.category ?? "normal",
+        isMandatory: row.is_mandatory ?? false,
         caseTitle: c.caseTitle,
         clientName: c.clientName,
         courtName: c.courtName || "غير محدد",

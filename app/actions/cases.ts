@@ -339,6 +339,8 @@ export async function addCaseSession(
     sessionDate: string;
     notes?: string;
     status?: "upcoming" | "held";
+    category?: "normal" | "appeal" | "cassation";
+    isMandatory?: boolean;
   },
 ): Promise<{ data: CaseSession | null; error: string | null }> {
   const supabase = await createClient();
@@ -349,11 +351,14 @@ export async function addCaseSession(
       session_date: sessionData.sessionDate,
       notes: sessionData.notes ?? "",
       status: sessionData.status ?? "upcoming",
+      category: sessionData.category ?? "normal",
+      is_mandatory: sessionData.isMandatory ?? false,
     })
     .select()
     .single();
 
   revalidatePath(`/cases/${caseId}`);
+  revalidatePath("/sessions");
   if (error || !data) return { data: null, error: error?.message ?? null };
   return {
     data: {
@@ -362,6 +367,8 @@ export async function addCaseSession(
       sessionDate: data.session_date,
       status: data.status ?? "upcoming",
       decision: data.decision ?? null,
+      category: data.category ?? "normal",
+      isMandatory: data.is_mandatory ?? false,
       notes: data.notes,
       createdAt: data.created_at,
     },
@@ -376,11 +383,13 @@ export async function recordSessionResult(
     decision: "adjourned" | "judgment_reserved" | "judged";
     notes: string;
     nextSessionDate?: string | null;
+    /** When decision is "judged", user may choose to create an appeal or cassation session */
+    followUpType?: "appeal" | "cassation" | null;
   },
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
 
-  // 1. Validate nextSessionDate when required
+  // 1. Validate nextSessionDate when required (adjourned / judgment_reserved)
   if (
     (payload.decision === "adjourned" ||
       payload.decision === "judgment_reserved") &&
@@ -424,17 +433,52 @@ export async function recordSessionResult(
 
   // 4. Handle post-decision logic
   if (payload.decision === "judged") {
-    // Close the case
-    await supabase
-      .from("cases")
-      .update({ case_status: "closed", updated_at: new Date().toISOString() })
-      .eq("id", caseId);
+    if (
+      payload.followUpType === "appeal" ||
+      payload.followUpType === "cassation"
+    ) {
+      // Auto-create appeal/cassation session
+      const daysToAdd = payload.followUpType === "appeal" ? 40 : 60;
+      const currentDate = new Date(sessionRow.session_date);
+      const followUpDate = new Date(
+        currentDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000,
+      );
+
+      await supabase.from("case_sessions").insert({
+        case_id: caseId,
+        session_date: followUpDate.toISOString(),
+        status: "upcoming",
+        category: payload.followUpType,
+        is_mandatory: true,
+        notes:
+          payload.followUpType === "appeal"
+            ? "جلسة استئناف - تم إنشاؤها تلقائياً"
+            : "جلسة نقض - تم إنشاؤها تلقائياً",
+      });
+
+      // Update next_session_date on case
+      await supabase
+        .from("cases")
+        .update({
+          next_session_date: followUpDate.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", caseId);
+    } else {
+      // No follow-up — close the case
+      await supabase
+        .from("cases")
+        .update({ case_status: "closed", updated_at: new Date().toISOString() })
+        .eq("id", caseId);
+    }
   } else if (payload.nextSessionDate) {
-    // Create the next upcoming session
+    // Create the next upcoming session (normal flow)
     await supabase.from("case_sessions").insert({
       case_id: caseId,
       session_date: payload.nextSessionDate,
       status: "upcoming",
+      category: "normal",
+      is_mandatory: false,
       notes: "",
     });
 
@@ -451,7 +495,114 @@ export async function recordSessionResult(
   revalidatePath(`/cases/${caseId}`);
   revalidatePath("/cases");
   revalidatePath("/dashboard");
+  revalidatePath("/sessions");
   return { error: null };
+}
+
+/**
+ * Check if a case can be closed (no incomplete mandatory sessions).
+ */
+export async function canCloseCase(
+  caseId: string,
+): Promise<{
+  canClose: boolean;
+  pendingCount: number;
+  reason: string | null;
+  error: string | null;
+}> {
+  const supabase = await createClient();
+
+  // Check for any mandatory sessions that are still upcoming
+  const { data: pendingMandatory, error } = await supabase
+    .from("case_sessions")
+    .select("id, category")
+    .eq("case_id", caseId)
+    .eq("is_mandatory", true)
+    .eq("status", "upcoming");
+
+  if (error)
+    return {
+      canClose: false,
+      pendingCount: 0,
+      reason: null,
+      error: error.message,
+    };
+
+  if (pendingMandatory && pendingMandatory.length > 0) {
+    const types = pendingMandatory.map((s) =>
+      s.category === "appeal"
+        ? "استئناف"
+        : s.category === "cassation"
+          ? "نقض"
+          : "إلزامية",
+    );
+    return {
+      canClose: false,
+      pendingCount: pendingMandatory.length,
+      reason: `لا يمكن إغلاق القضية — توجد جلسات إلزامية لم تكتمل: ${types.join("، ")}`,
+      error: null,
+    };
+  }
+
+  return { canClose: true, pendingCount: 0, reason: null, error: null };
+}
+
+/**
+ * Upload an attachment to a session (for mandatory sessions).
+ */
+export async function uploadSessionAttachment(
+  sessionId: string,
+  formData: FormData,
+): Promise<{
+  data: { id: string; fileUrl: string } | null;
+  error: string | null;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { data: null, error: "غير مصرح" };
+
+  const file = formData.get("file") as File;
+  if (!file || !file.size) return { data: null, error: "لم يتم اختيار ملف" };
+
+  const allowedTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+  if (!allowedTypes.includes(file.type)) {
+    return { data: null, error: "نوع الملف غير مدعوم (PDF، صورة، Word فقط)" };
+  }
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const storagePath = `sessions/${sessionId}/${Date.now()}-${safeName}`;
+  const bytes = await file.arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage
+    .from("case-attachments")
+    .upload(storagePath, bytes, { contentType: file.type, upsert: false });
+
+  if (uploadError) return { data: null, error: uploadError.message };
+
+  const { data: row, error: dbError } = await supabase
+    .from("session_attachments")
+    .insert({
+      session_id: sessionId,
+      file_name: file.name,
+      file_url: storagePath,
+      file_type: file.type,
+      file_size: file.size,
+    })
+    .select()
+    .single();
+
+  if (dbError) return { data: null, error: dbError.message };
+
+  return { data: { id: row.id, fileUrl: row.file_url }, error: null };
 }
 
 export async function deleteCaseSession(

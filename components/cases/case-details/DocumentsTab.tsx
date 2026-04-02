@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { FileText, Upload, Download } from "lucide-react";
+import { FileText, Upload, Download, ShieldAlert } from "lucide-react";
 import ImportantDates from "./ImportantDates";
 import { formatDateTime } from "./helpers";
 import {
@@ -10,15 +10,26 @@ import {
 } from "@/app/actions/cases";
 import { extractStoragePath } from "@/lib/storage";
 import toast from "react-hot-toast";
-import type { Case, CaseAttachment } from "@/types";
+import type { Case, CaseAttachment, SessionAttachment } from "@/types";
+
+const CATEGORY_LABELS: Record<string, string> = {
+  normal: "عادية",
+  appeal: "استئناف",
+  cassation: "نقض",
+};
 
 export default function DocumentsTab({
   attachments,
+  sessionAttachments,
   caseItem,
   onOpenSessions,
   onUploaded,
 }: {
   attachments: CaseAttachment[];
+  sessionAttachments: (SessionAttachment & {
+    sessionDate: string;
+    sessionCategory: string;
+  })[];
   caseItem: Case;
   onOpenSessions: () => void;
   onUploaded: (att: CaseAttachment) => void;
@@ -140,6 +151,85 @@ export default function DocumentsTab({
             );
           })}
         </div>
+
+        {/* ─── Session Attachments ──────────────────────────────────── */}
+        {sessionAttachments.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-text-primary text-lg font-semibold mb-4 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-warning" />
+              مرفقات الجلسات
+            </h3>
+            <div className="flex flex-col gap-4">
+              {sessionAttachments.map((doc) => {
+                const isLoading = openingFileId === doc.id;
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between bg-surface border border-warning/30 rounded-lg p-5 hover:shadow-md transition-all"
+                  >
+                    <button
+                      onClick={() =>
+                        handleOpenFile({
+                          id: doc.id,
+                          fileName: doc.fileName,
+                          fileUrl: doc.fileUrl,
+                          fileSize: doc.fileSize,
+                          fileType: doc.fileType,
+                          uploadedAt: doc.createdAt,
+                          caseId: caseItem.id,
+                        })
+                      }
+                      disabled={!!openingFileId}
+                      className="flex gap-5 text-right flex-1 min-w-0 disabled:opacity-60"
+                    >
+                      <div className="w-12 h-12 bg-warning/10 rounded-2xl flex items-center justify-center shrink-0">
+                        <FileText className="w-6 h-6 text-warning" />
+                      </div>
+                      <div className="flex flex-col text-right min-w-0">
+                        <span className="text-text-primary font-semibold hover:text-primary transition-colors truncate">
+                          {doc.fileName || "مستند بدون اسم"}
+                        </span>
+                        <span className="text-text-muted text-xs">
+                          {doc.fileSize
+                            ? `${Math.round(doc.fileSize / 1024)} KB • `
+                            : ""}
+                          جلسة{" "}
+                          {CATEGORY_LABELS[doc.sessionCategory] ??
+                            doc.sessionCategory}
+                          {doc.sessionDate
+                            ? ` • ${formatDateTime(doc.sessionDate)}`
+                            : ""}
+                        </span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleOpenFile({
+                          id: doc.id,
+                          fileName: doc.fileName,
+                          fileUrl: doc.fileUrl,
+                          fileSize: doc.fileSize,
+                          fileType: doc.fileType,
+                          uploadedAt: doc.createdAt,
+                          caseId: caseItem.id,
+                        })
+                      }
+                      disabled={!!openingFileId}
+                      className="p-3 text-text-secondary hover:text-text-primary hover:bg-beige rounded-2xl transition disabled:opacity-50 shrink-0"
+                      title="فتح الملف"
+                    >
+                      {isLoading ? (
+                        <span className="w-5 h-5 block border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Download className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <ImportantDates caseItem={caseItem} onOpenSessions={onOpenSessions} />

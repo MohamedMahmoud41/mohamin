@@ -13,6 +13,7 @@ import {
   X,
   Building,
   UserCheck,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -34,18 +35,20 @@ export default function Sidebar({ user, open, onClose }: SidebarProps) {
 
   const menu = [
     { label: "لوحة التحكم", icon: LayoutGrid, path: "/dashboard" },
-    { label: "القضايا", icon: Scale, path: "/cases" },
-    { label: "إضافة قضية", icon: PlusCircle, path: "/cases/new" },
-    { label: "العملاء", icon: UserCheck, path: "/clients" },
-    { label: "المحاكم", icon: Building, path: "/courts" },
-    ...(isOwner ? [{ label: "المحامون", icon: Users, path: "/lawyers" }] : []),
     ...(hasOffice
       ? [{ label: "المكتب", icon: Building2, path: "/office" }]
       : []),
+    { label: "القضايا", icon: Scale, path: "/cases" },
+    { label: "إضافة قضية", icon: PlusCircle, path: "/cases/new" },
+    { label: "الجلسات", icon: CalendarDays, path: "/sessions" },
+    { label: "العملاء", icon: UserCheck, path: "/clients" },
+    ...(isOwner ? [{ label: "المحامون", icon: Users, path: "/lawyers" }] : []),
+
     ...(isOwner
       ? [{ label: "الإحصائيات", icon: BarChart3, path: "/reports" }]
       : []),
     { label: "الإعلانات", icon: MessageCircle, path: "/posts" },
+    { label: "المحاكم", icon: Building, path: "/courts" },
   ];
 
   const sidebar = (

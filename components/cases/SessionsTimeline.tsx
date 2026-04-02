@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   Plus,
@@ -10,13 +11,17 @@ import {
   AlertTriangle,
   CalendarPlus,
   Trash2,
+  Gavel,
+  Upload,
+  ShieldAlert,
 } from "lucide-react";
 import {
   addCaseSession,
   recordSessionResult,
   deleteCaseSession,
+  uploadSessionAttachment,
 } from "@/app/actions/cases";
-import type { CaseSession, SessionDecision } from "@/types";
+import type { CaseSession, SessionDecision, SessionCategory } from "@/types";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,6 +51,18 @@ const DECISION_LABELS: Record<SessionDecision, string> = {
   adjourned: "تأجيل",
   judgment_reserved: "حجز للحكم",
   judged: "صدر الحكم",
+};
+
+const CATEGORY_LABELS: Record<SessionCategory, string> = {
+  normal: "عادية",
+  appeal: "استئناف",
+  cassation: "نقض",
+};
+
+const CATEGORY_COLORS: Record<SessionCategory, string> = {
+  normal: "bg-secondary/20 text-text-secondary",
+  appeal: "bg-warning/20 text-warning",
+  cassation: "bg-error/20 text-error",
 };
 
 const DECISIONS_REQUIRING_NEXT: Array<SessionDecision> = [
@@ -79,11 +96,18 @@ function RecordResultForm({
   const [decision, setDecision] = useState<SessionDecision | "">("");
   const [notes, setNotes] = useState("");
   const [nextSessionDate, setNextSessionDate] = useState("");
+  const [followUpType, setFollowUpType] = useState<
+    "appeal" | "cassation" | "none"
+  >("none");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const requiresNext =
     decision !== "" &&
     DECISIONS_REQUIRING_NEXT.includes(decision as SessionDecision);
+
+  const isJudged = decision === "judged";
+  const isMandatorySession = session.isMandatory;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,18 +123,40 @@ function RecordResultForm({
       setError("تاريخ الجلسة القادمة مطلوب");
       return;
     }
+    // Mandatory session: require attachment
+    if (isMandatorySession && isJudged && !attachmentFile) {
+      setError("يجب إرفاق مستند (صيغة تنفيذية) للجلسات الإلزامية");
+      return;
+    }
     setError(null);
 
     startTransition(async () => {
+      // 1. Record result
       const { error: err } = await recordSessionResult(caseId, session.id, {
         decision: decision as SessionDecision,
         notes,
         nextSessionDate: requiresNext ? nextSessionDate : null,
+        followUpType: isJudged && followUpType !== "none" ? followUpType : null,
       });
       if (err) {
         setError(err);
         return;
       }
+
+      // 2. Upload attachment if provided
+      if (attachmentFile) {
+        const formData = new FormData();
+        formData.append("file", attachmentFile);
+        const { error: uploadErr } = await uploadSessionAttachment(
+          session.id,
+          formData,
+        );
+        if (uploadErr) {
+          setError(uploadErr);
+          return;
+        }
+      }
+
       onDone();
     });
   }
@@ -134,6 +180,7 @@ function RecordResultForm({
           onChange={(e) => {
             setDecision(e.target.value as SessionDecision | "");
             setNextSessionDate("");
+            setFollowUpType("none");
             setError(null);
           }}
           className="w-full border border-border rounded-lg p-2.5 bg-surface text-text-primary text-sm focus:outline-none focus:border-primary"
@@ -146,6 +193,64 @@ function RecordResultForm({
           <option value="judged">{DECISION_LABELS.judged}</option>
         </select>
       </div>
+
+      {/* Follow-up type — shown when decision is "judged" */}
+      {isJudged && (
+        <div className="p-3 bg-warning/5 border border-warning/30 rounded-xl space-y-2">
+          <p className="text-sm font-semibold text-text-primary flex items-center gap-1.5">
+            <Gavel className="w-4 h-4 text-warning" />
+            هل تريد إنشاء جلسة متابعة؟
+          </p>
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-text-primary">
+              <input
+                type="radio"
+                name="followUp"
+                value="none"
+                checked={followUpType === "none"}
+                onChange={() => setFollowUpType("none")}
+                className="accent-primary"
+              />
+              لا — إغلاق القضية
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-text-primary">
+              <input
+                type="radio"
+                name="followUp"
+                value="appeal"
+                checked={followUpType === "appeal"}
+                onChange={() => setFollowUpType("appeal")}
+                className="accent-warning"
+              />
+              إنشاء جلسة استئناف
+              <span className="text-xs text-text-muted">
+                (بعد 40 يوم تلقائياً)
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-text-primary">
+              <input
+                type="radio"
+                name="followUp"
+                value="cassation"
+                checked={followUpType === "cassation"}
+                onChange={() => setFollowUpType("cassation")}
+                className="accent-error"
+              />
+              إنشاء جلسة نقض
+              <span className="text-xs text-text-muted">
+                (بعد 60 يوم تلقائياً)
+              </span>
+            </label>
+          </div>
+          {followUpType !== "none" && (
+            <p className="text-xs text-warning bg-warning/10 p-2 rounded-lg">
+              ⚡ سيتم إنشاء جلسة {followUpType === "appeal" ? "استئناف" : "نقض"}{" "}
+              تلقائياً بعد {followUpType === "appeal" ? "40" : "60"} يوم من
+              تاريخ الجلسة الحالية
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Notes */}
       <div>
@@ -163,7 +268,7 @@ function RecordResultForm({
 
       {/* Next session date — shown only when required */}
       {requiresNext && (
-        <div className="animate-fadeIn">
+        <div>
           <label className="block text-text-muted text-xs mb-1">
             تاريخ الجلسة القادمة <span className="text-error">*</span>
           </label>
@@ -171,17 +276,35 @@ function RecordResultForm({
             type="datetime-local"
             value={nextSessionDate}
             onChange={(e) => setNextSessionDate(e.target.value)}
-            min={
-              /* force next > current date */
-              new Date(new Date(session.sessionDate).getTime() + 60_000)
-                .toISOString()
-                .slice(0, 16)
-            }
+            min={new Date(new Date(session.sessionDate).getTime() + 60_000)
+              .toISOString()
+              .slice(0, 16)}
             className="w-full border border-border rounded-lg p-2.5 bg-surface text-text-primary text-sm focus:outline-none focus:border-primary"
           />
           <p className="text-text-muted text-xs mt-1">
             يجب أن يكون بعد تاريخ الجلسة الحالية
           </p>
+        </div>
+      )}
+
+      {/* Attachment upload — for mandatory sessions when judged */}
+      {isMandatorySession && isJudged && (
+        <div>
+          <label className="block text-text-muted text-xs mb-1">
+            المستند (الصيغة التنفيذية) <span className="text-error">*</span>
+          </label>
+          <label className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition">
+            <Upload className="w-5 h-5 text-text-muted" />
+            <span className="text-sm text-text-secondary">
+              {attachmentFile ? attachmentFile.name : "اضغط لاختيار ملف"}
+            </span>
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+            />
+          </label>
         </div>
       )}
 
@@ -217,6 +340,7 @@ export default function SessionsTimeline({
   onClose,
   onSessionsChanged,
 }: SessionsTimelineProps) {
+  const router = useRouter();
   const [localSessions, setLocalSessions] = useState<CaseSession[]>(sessions);
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -231,18 +355,22 @@ export default function SessionsTimeline({
 
   const hasUpcoming = localSessions.some((s) => s.status === "upcoming");
 
-  // The single upcoming (or overdue) session to be recorded
-  const activeSession = localSessions.find((s) => s.status === "upcoming");
-
   function sync(updated: CaseSession[]) {
     setLocalSessions(updated);
     onSessionsChanged(updated);
   }
 
-  function handleDelete(id: string) {
+  function handleDelete(session: CaseSession) {
+    if (session.isMandatory && session.status === "upcoming") {
+      // Don't allow deleting mandatory sessions
+      return;
+    }
     startTransition(async () => {
-      const { error } = await deleteCaseSession(caseId, id);
-      if (!error) sync(localSessions.filter((s) => s.id !== id));
+      const { error } = await deleteCaseSession(caseId, session.id);
+      if (!error) {
+        sync(localSessions.filter((s) => s.id !== session.id));
+        router.refresh();
+      }
     });
   }
 
@@ -261,14 +389,14 @@ export default function SessionsTimeline({
       sync([...localSessions, data]);
       setNewDate("");
       setShowAddForm(false);
+      router.refresh();
     });
   }
 
   function handleResultSaved() {
-    // Reload from server by closing + letting parent refresh
     setRecordingId(null);
     onClose();
-    // The action already revalidated the path, so the parent page will refetch
+    router.refresh();
   }
 
   return (
@@ -289,7 +417,6 @@ export default function SessionsTimeline({
           {/* Action bar */}
           <div className="flex gap-2">
             {hasUpcoming ? (
-              /* Guide user to record result instead of adding new session */
               <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-warning/10 border border-warning/30 text-warning text-sm font-semibold">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 يوجد جلسة قادمة — سجّل نتيجتها أولاً قبل إضافة جلسة جديدة
@@ -353,7 +480,7 @@ export default function SessionsTimeline({
 
             return (
               <div key={session.id}>
-                <SessionCard
+                <TimelineSessionCard
                   session={session}
                   displayStatus={displayStatus}
                   isRecording={isRecording}
@@ -361,10 +488,9 @@ export default function SessionsTimeline({
                   onRecord={() =>
                     setRecordingId(isRecording ? null : session.id)
                   }
-                  onDelete={() => handleDelete(session.id)}
+                  onDelete={() => handleDelete(session)}
                 />
 
-                {/* Inline record-result form */}
                 {isRecording && (
                   <RecordResultForm
                     session={session}
@@ -382,9 +508,9 @@ export default function SessionsTimeline({
   );
 }
 
-// ─── Session Card ─────────────────────────────────────────────────────────────
+// ─── Timeline Session Card ────────────────────────────────────────────────────
 
-function SessionCard({
+function TimelineSessionCard({
   session,
   displayStatus,
   isRecording,
@@ -399,12 +525,19 @@ function SessionCard({
   onRecord: () => void;
   onDelete: () => void;
 }) {
+  const isAppealOrCassation =
+    session.category === "appeal" || session.category === "cassation";
+
   const wrapperClass =
     displayStatus === "overdue"
       ? "border-2 border-error bg-error/5"
-      : displayStatus === "upcoming"
-        ? "border-2 border-primary bg-primary/5"
-        : "border border-border bg-surface opacity-75";
+      : displayStatus === "upcoming" && isAppealOrCassation
+        ? session.category === "appeal"
+          ? "border-2 border-warning bg-warning/5"
+          : "border-2 border-error bg-error/5"
+        : displayStatus === "upcoming"
+          ? "border-2 border-primary bg-primary/5"
+          : "border border-border bg-surface opacity-75";
 
   const badge = {
     upcoming: { label: "قادمة", cls: "bg-primary text-white" },
@@ -428,9 +561,15 @@ function SessionCard({
             className={`w-5 h-5 mt-0.5 shrink-0 ${
               displayStatus === "overdue"
                 ? "text-error"
-                : displayStatus === "upcoming"
-                  ? "text-primary"
-                  : "text-text-muted"
+                : displayStatus === "upcoming" &&
+                    session.category === "cassation"
+                  ? "text-error"
+                  : displayStatus === "upcoming" &&
+                      session.category === "appeal"
+                    ? "text-warning"
+                    : displayStatus === "upcoming"
+                      ? "text-primary"
+                      : "text-text-muted"
             }`}
           />
           <div>
@@ -443,6 +582,26 @@ function SessionCard({
             >
               {formatDateTime(session.sessionDate)}
             </span>
+
+            {/* Category badge */}
+            {session.category !== "normal" && (
+              <span
+                className={`inline-block text-xs px-2 py-0.5 rounded-full font-bold mr-2 ${CATEGORY_COLORS[session.category]}`}
+              >
+                {CATEGORY_LABELS[session.category]}
+              </span>
+            )}
+
+            {/* Mandatory indicator */}
+            {session.isMandatory && session.status === "upcoming" && (
+              <div className="flex items-center gap-1 mt-1">
+                <ShieldAlert className="w-3.5 h-3.5 text-warning" />
+                <span className="text-xs text-warning font-semibold">
+                  جلسة إلزامية
+                </span>
+              </div>
+            )}
+
             {session.notes && (
               <p className="text-text-muted text-xs mt-1 leading-relaxed">
                 {session.notes}
@@ -452,13 +611,7 @@ function SessionCard({
               <p className="text-text-secondary text-xs mt-1 font-medium">
                 القرار:{" "}
                 <span className="text-primary">
-                  {
-                    {
-                      adjourned: "تأجيل",
-                      judgment_reserved: "حجز للحكم",
-                      judged: "صدر الحكم",
-                    }[session.decision]
-                  }
+                  {DECISION_LABELS[session.decision]}
                 </span>
               </p>
             )}
@@ -473,7 +626,6 @@ function SessionCard({
             {badge.label}
           </span>
 
-          {/* Record result button — only for upcoming/overdue sessions */}
           {(displayStatus === "upcoming" || displayStatus === "overdue") && (
             <button
               onClick={onRecord}
@@ -490,15 +642,17 @@ function SessionCard({
             </button>
           )}
 
-          {/* Delete — allow for held sessions too */}
-          <button
-            onClick={onDelete}
-            disabled={isPending}
-            title="حذف الجلسة"
-            className="p-1.5 text-error hover:bg-error/10 rounded-lg transition disabled:opacity-40"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {/* Don't allow deleting mandatory upcoming sessions */}
+          {!(session.isMandatory && session.status === "upcoming") && (
+            <button
+              onClick={onDelete}
+              disabled={isPending}
+              title="حذف الجلسة"
+              className="p-1.5 text-error hover:bg-error/10 rounded-lg transition disabled:opacity-40"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

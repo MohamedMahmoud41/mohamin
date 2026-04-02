@@ -3,7 +3,11 @@ import Link from "next/link";
 import { Scale, Activity, Clock, CircleCheckBig } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/services/users";
-import { getCasesByUser, getUpcomingSessionsForCases } from "@/services/cases";
+import {
+  getCasesByUser,
+  getUpcomingSessionsForCases,
+  getTomorrowSessionsForCases,
+} from "@/services/cases";
 import { redirect } from "next/navigation";
 import { StatCard, CaseCard, SessionCard } from "@/components/dashboard";
 import type { Case, DashboardSession } from "@/types";
@@ -92,6 +96,10 @@ export default async function DashboardPage() {
     caseIds,
     cases,
   );
+  const { data: tomorrowSessions = [] } = await getTomorrowSessionsForCases(
+    caseIds,
+    cases,
+  );
 
   // ─── Stats ────────────────────────────────────────────────────────────────
   const totalCases = cases.length;
@@ -164,17 +172,9 @@ export default async function DashboardPage() {
   const now = new Date();
   const sessions: DashboardSession[] = allUpcomingSessions ?? [];
   const overdueSessions = sessions.filter((s) => now > new Date(s.sessionDate));
-  const futureSessions = sessions.filter((s) => now <= new Date(s.sessionDate));
-  const sortedSessions: DashboardSession[] = [
-    ...overdueSessions.sort(
-      (a, b) =>
-        new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime(),
-    ),
-    ...futureSessions.sort(
-      (a, b) =>
-        new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime(),
-    ),
-  ].slice(0, 5);
+
+  // Tomorrow's sessions for the dedicated section
+  const tomorrowList: DashboardSession[] = tomorrowSessions ?? [];
 
   return (
     <div className="p-4 md:p-8 bg-background min-h-full">
@@ -225,22 +225,34 @@ export default async function DashboardPage() {
         {/* Sessions */}
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl text-text-primary font-bold">
-              الجلسات القادمة
-            </h2>
-            {overdueSessions.length > 0 && (
-              <span className="flex items-center gap-1 text-xs text-error font-semibold bg-error/10 px-2.5 py-1 rounded-full">
-                {overdueSessions.length} متأخرة
-              </span>
-            )}
+            <h2 className="text-xl text-text-primary font-bold">جلسات الغد</h2>
+            <Link
+              href="/sessions"
+              className="text-sm text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              عرض الكل
+            </Link>
           </div>
-          {sortedSessions.length > 0 ? (
-            sortedSessions.map((s) => (
+
+          {overdueSessions.length > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2.5 mb-4 rounded-xl bg-error/10 border border-error/30 text-error text-sm font-semibold">
+              <span>⚠ لديك {overdueSessions.length} جلسة متأخرة</span>
+              <Link
+                href="/sessions"
+                className="text-xs underline hover:no-underline mr-auto"
+              >
+                عرض
+              </Link>
+            </div>
+          )}
+
+          {tomorrowList.length > 0 ? (
+            tomorrowList.map((s) => (
               <SessionCard key={s.sessionId} session={s} />
             ))
           ) : (
-            <p className="text-center text-sm text-text-muted">
-              لا توجد جلسات قادمة
+            <p className="text-center text-sm text-text-muted py-8">
+              لا توجد جلسات غداً
             </p>
           )}
         </div>

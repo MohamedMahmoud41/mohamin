@@ -154,6 +154,7 @@ export interface CaseNote {
 
 export type SessionStatus = "upcoming" | "held";
 export type SessionDecision = "adjourned" | "judgment_reserved" | "judged";
+export type SessionCategory = "normal" | "appeal" | "cassation";
 
 export interface CaseSession {
   id: string;
@@ -161,7 +162,19 @@ export interface CaseSession {
   sessionDate: string;
   status: SessionStatus;
   decision?: SessionDecision | null;
+  category: SessionCategory;
+  isMandatory: boolean;
   notes: string;
+  createdAt: string;
+}
+
+export interface SessionAttachment {
+  id: string;
+  sessionId: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
   createdAt: string;
 }
 
@@ -307,6 +320,8 @@ export interface DashboardSession {
   sessionDate: string;
   /** Raw status from DB – use getSessionDisplayStatus() to derive "overdue" */
   status: SessionStatus;
+  category: SessionCategory;
+  isMandatory: boolean;
   caseTitle: string;
   clientName: string;
   courtName: string;

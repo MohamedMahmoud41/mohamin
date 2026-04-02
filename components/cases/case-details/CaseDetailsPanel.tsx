@@ -16,13 +16,14 @@ import {
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui";
 import SessionsTimeline from "@/components/cases/SessionsTimeline";
-import { deleteCase, updateCase } from "@/app/actions/cases";
+import { deleteCase, updateCase, canCloseCase } from "@/app/actions/cases";
 import toast from "react-hot-toast";
 import type {
   Case,
   CaseNote,
   CaseSession,
   CaseAttachment,
+  SessionAttachment,
   CaseReport,
   Lawyer,
   User as UserType,
@@ -41,6 +42,10 @@ interface CaseDetailsPanelProps {
   sessions: CaseSession[];
   notes: CaseNote[];
   attachments: CaseAttachment[];
+  sessionAttachments: (SessionAttachment & {
+    sessionDate: string;
+    sessionCategory: string;
+  })[];
   reports: CaseReport[];
   currentUser: UserType;
   lawyers: Lawyer[];
@@ -53,6 +58,7 @@ export default function CaseDetailsPanel({
   sessions,
   notes,
   attachments,
+  sessionAttachments,
   reports,
   currentUser,
   lawyers,
@@ -71,6 +77,19 @@ export default function CaseDetailsPanel({
   const [currentStatus, setCurrentStatus] = useState(caseItem.caseStatus);
   const statusRef = useRef<HTMLDivElement>(null);
 
+  // ─── Sync local state when server props change (after router.refresh) ───
+  useEffect(() => {
+    setLocalSessions(sessions);
+  }, [sessions]);
+
+  useEffect(() => {
+    setLocalAttachments(attachments);
+  }, [attachments]);
+
+  useEffect(() => {
+    setCurrentStatus(caseItem.caseStatus);
+  }, [caseItem.caseStatus]);
+
   // ─── Delete case ────────────────────────────────────────────────────────────
   const handleDeleteCase = () => {
     startTransition(async () => {
@@ -84,12 +103,34 @@ export default function CaseDetailsPanel({
   };
 
   // ─── Change status ──────────────────────────────────────────────────────────
+  const CLOSED_STATUSES = ["منتهية لصالح الموكل", "مغلقة"];
+
   const handleStatusChange = (newStatus: string) => {
     setShowStatusMenu(false);
     if (newStatus === currentStatus) return;
-    const prev = currentStatus;
-    setCurrentStatus(newStatus);
+
     startTransition(async () => {
+      // Guard: If trying to close/complete, verify no pending mandatory sessions
+      if (CLOSED_STATUSES.includes(newStatus)) {
+        const {
+          canClose,
+          pendingCount,
+          error: checkErr,
+        } = await canCloseCase(caseItem.id);
+        if (checkErr) {
+          toast.error(checkErr);
+          return;
+        }
+        if (!canClose) {
+          toast.error(
+            `لا يمكن إغلاق القضية — يوجد ${pendingCount} جلسة إلزامية لم تُنهَ بعد`,
+          );
+          return;
+        }
+      }
+
+      const prev = currentStatus;
+      setCurrentStatus(newStatus);
       const { error } = await updateCase(caseItem.id, {
         caseStatus: newStatus,
       });
@@ -251,6 +292,7 @@ export default function CaseDetailsPanel({
       {activeTab === "documents" && (
         <DocumentsTab
           attachments={localAttachments}
+          sessionAttachments={sessionAttachments}
           caseItem={caseItem}
           onOpenSessions={() => setShowSessionsModal(true)}
           onUploaded={(att) => setLocalAttachments((prev) => [...prev, att])}

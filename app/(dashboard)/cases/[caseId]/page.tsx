@@ -7,6 +7,7 @@ import {
   getCaseNotes,
   getCaseSessions,
   getCaseAttachments,
+  getSessionAttachmentsByCaseId,
 } from "@/services/cases";
 import { getCaseReports } from "@/services/case_reports";
 import { getLawyersByOffice } from "@/services/lawyers";
@@ -39,6 +40,7 @@ export default async function CaseDetailsPage({
     { data: sessions },
     { data: notes },
     { data: attachments },
+    { data: sessionAttachments },
     { data: reports },
     { data: courts },
     { data: caseTypes },
@@ -52,6 +54,7 @@ export default async function CaseDetailsPage({
     getCaseSessions(caseId),
     getCaseNotes(caseId),
     getCaseAttachments(caseId),
+    getSessionAttachmentsByCaseId(caseId),
     getCaseReports(caseId),
     getCourts(),
     getCaseTypes(),
@@ -86,6 +89,7 @@ export default async function CaseDetailsPage({
       sessions={sessions ?? []}
       notes={notes ?? []}
       attachments={attachments ?? []}
+      sessionAttachments={sessionAttachments ?? []}
       reports={reports ?? []}
       currentUser={user}
       lawyers={lawyers ?? []}
