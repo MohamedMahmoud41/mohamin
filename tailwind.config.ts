@@ -8,42 +8,46 @@ module.exports = {
   darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
-      // ─── Design Tokens (mirrored from the old React project's index.css @theme) ───
+      // ─── Design Tokens — using CSS variables for dark mode support ───
       colors: {
         primary: {
-          DEFAULT: "#2563eb", // blue-600
-          dark: "#1d4ed8", // blue-700
-          light: "#3b82f6", // blue-500
+          DEFAULT: "rgb(var(--color-primary) / <alpha-value>)",
+          dark: "rgb(var(--color-primary-dark) / <alpha-value>)",
+          light: "rgb(var(--color-primary-light) / <alpha-value>)",
         },
         secondary: {
-          DEFAULT: "#64748b", // slate-500
-          light: "#94a3b8", // slate-400
+          DEFAULT: "rgb(var(--color-secondary) / <alpha-value>)",
+          light: "rgb(var(--color-secondary-light) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#f59e0b", // amber-500
-          light: "#fbbf24", // amber-400
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          light: "rgb(var(--color-accent-light) / <alpha-value>)",
         },
-        background: "#f8fafc", // slate-50
+        background: "rgb(var(--color-background) / <alpha-value>)",
         surface: {
-          DEFAULT: "#ffffff",
-          hover: "#f1f5f9", // slate-100
+          DEFAULT: "rgb(var(--color-surface) / <alpha-value>)",
+          hover: "rgb(var(--color-surface-hover) / <alpha-value>)",
         },
         text: {
-          primary: "#0f172a", // slate-900
-          secondary: "#475569", // slate-600
-          muted: "#94a3b8", // slate-400
+          primary: "rgb(var(--color-text-primary) / <alpha-value>)",
+          secondary: "rgb(var(--color-text-secondary) / <alpha-value>)",
+          muted: "rgb(var(--color-text-muted) / <alpha-value>)",
         },
-        border: "#e2e8f0", // slate-200
-        divider: "#f1f5f9", // slate-100
-        success: "#16a34a", // green-600
-        warning: "#d97706", // amber-600
-        error: "#dc2626", // red-600
-        info: "#0ea5e9", // sky-500
+        border: "rgb(var(--color-border) / <alpha-value>)",
+        divider: "rgb(var(--color-divider) / <alpha-value>)",
+        beige: {
+          DEFAULT: "rgb(var(--color-beige) / <alpha-value>)",
+          light: "rgb(var(--color-beige-light) / <alpha-value>)",
+        },
+        success: "rgb(var(--color-success) / <alpha-value>)",
+        warning: "rgb(var(--color-warning) / <alpha-value>)",
+        error: "rgb(var(--color-error) / <alpha-value>)",
+        info: "rgb(var(--color-info) / <alpha-value>)",
       },
       boxShadow: {
-        sm: "0 1px 3px rgba(15, 23, 42, 0.06)",
-        md: "0 4px 12px rgba(15, 23, 42, 0.10)",
-        lg: "0 8px 24px rgba(15, 23, 42, 0.14)",
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
       },
       borderRadius: {
         sm: "8px",

@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         {/* Preconnect for Google Fonts performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,8 +29,17 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* Inline script to apply theme before first paint — prevents FOUC */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme")||"light";if(t==="system"){t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);if(t==="dark")document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark")}catch(e){}})()`,
+          }}
+        />
       </head>
-      <body className="font-sans bg-background text-text-primary antialiased" suppressHydrationWarning>
+      <body
+        className="font-sans bg-background text-text-primary antialiased"
+        suppressHydrationWarning
+      >
         {/* Global toast notifications — mirrors react-hot-toast in old project */}
         <Toaster
           position="top-center"

@@ -9,7 +9,6 @@ import {
   Building2,
   BarChart3,
   MessageCircle,
-  Settings,
   LogOut,
   X,
   Building,
@@ -47,7 +46,6 @@ export default function Sidebar({ user, open, onClose }: SidebarProps) {
       ? [{ label: "الإحصائيات", icon: BarChart3, path: "/reports" }]
       : []),
     { label: "الإعلانات", icon: MessageCircle, path: "/posts" },
-    { label: "الإعدادات", icon: Settings, path: "/settings" },
   ];
 
   const sidebar = (

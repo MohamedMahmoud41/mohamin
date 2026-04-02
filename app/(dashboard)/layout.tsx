@@ -10,6 +10,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/services/users";
+import { getOfficesByUser } from "@/services/office";
 import DashboardLayoutClient from "@/components/layout/DashboardLayoutClient";
 
 export default async function DashboardLayout({
@@ -25,9 +26,16 @@ export default async function DashboardLayout({
 
   if (!authUser) redirect("/login");
 
-  // ── Fetch full user profile ───────────────────────────────────────────────
-  const { data: user } = await getCurrentUser();
+  // ── Fetch full user profile + offices ─────────────────────────────────────
+  const [{ data: user }, { data: offices }] = await Promise.all([
+    getCurrentUser(),
+    getOfficesByUser(authUser.id),
+  ]);
 
   // ── Layout ────────────────────────────────────────────────────────────────
-  return <DashboardLayoutClient user={user}>{children}</DashboardLayoutClient>;
+  return (
+    <DashboardLayoutClient user={user} offices={offices}>
+      {children}
+    </DashboardLayoutClient>
+  );
 }

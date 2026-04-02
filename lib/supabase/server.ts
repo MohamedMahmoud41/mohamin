@@ -12,10 +12,15 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
+  const workspaceId = cookieStore.get("x-workspace-id")?.value ?? null;
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: {
+        headers: workspaceId ? { "x-workspace-id": workspaceId } : undefined,
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -76,3 +76,22 @@ export async function updateOffice(
 
   return { data: data ? mapOffice(data) : null, error: error?.message ?? null };
 }
+
+/**
+ * Get all offices a user belongs to — either as owner or member.
+ */
+export async function getOfficesByUser(
+  userId: string,
+): Promise<ApiResponse<Office[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("offices")
+    .select("*")
+    .or(`owner_id.eq.${userId},members_ids.cs.{${userId}}`)
+    .order("created_at", { ascending: false });
+
+  return {
+    data: data ? data.map(mapOffice) : [],
+    error: error?.message ?? null,
+  };
+}
